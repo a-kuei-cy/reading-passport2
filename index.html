@@ -75,7 +75,7 @@
                     </div>
                     <div class="bg-emerald-50 rounded-3xl p-6 kid-border border-emerald-200 kid-shadow text-center relative overflow-hidden">
                         <div class="text-5xl absolute -right-2 -bottom-2 opacity-20 transform -rotate-12">💡</div>
-                        <h4 class="text-emerald-600 font-bold mb-2">心得總篇數</h4>
+                        <h4 class="text-emerald-600 font-bold mb-2">心得與圖文分享</h4>
                         <div class="text-6xl font-black text-emerald-500" id="globalTotalReviews">0</div>
                     </div>
                     <div class="bg-sky-50 rounded-3xl p-6 kid-border border-sky-200 kid-shadow text-center relative overflow-hidden">
@@ -182,7 +182,7 @@
                 <div class="text-5xl animate-bounce">💡</div>
                 <div class="flex-1">
                     <p class="text-xs font-black text-orange-400 mb-1 uppercase tracking-widest">每日閱讀金句</p>
-                    <p id="randomQuoteText" class="text-lg md:text-xl font-bold text-orange-800">閱讀是一把鑰匙，為你開啟世界的大門。</p>
+                    <p id="randomQuoteText" class="text-lg md:text-xl font-bold text-orange-800">閱讀是一座隨身攜帶的避難所。</p>
                 </div>
             </div>
 
@@ -201,7 +201,7 @@
                         <div class="text-4xl font-black text-emerald-500" id="studentApprovedCount">0</div>
                     </div>
                     <div class="flex-1 md:flex-none bg-amber-50 px-5 py-4 rounded-2xl kid-border border-amber-200">
-                        <div class="text-sm font-bold text-amber-600 mb-1">審核中</div>
+                        <div class="text-sm font-bold text-amber-600 mb-1">審核中/退回</div>
                         <div class="text-4xl font-black text-amber-500" id="studentPendingCount">0</div>
                     </div>
                 </div>
@@ -213,21 +213,75 @@
                 <button onclick="switchStudentTab('list')" id="tab-stu-list" class="stu-tab whitespace-nowrap px-8 py-3 rounded-2xl font-black text-lg transition kid-btn bg-white text-slate-500 kid-border hover:bg-slate-50">📖 我的護照</button>
             </div>
 
-            <!-- 內容區塊: 新增紀錄 -->
+            <!-- 內容區塊: 新增紀錄 (擴充版) -->
             <div id="stu-content-add" class="stu-content">
-                <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200">
+                <div class="bg-white rounded-3xl p-6 md:p-8 kid-border kid-shadow border-slate-200">
                     <h3 class="text-2xl font-black mb-6 text-sky-600 flex items-center gap-2"><span>📝</span> 填寫閱讀紀錄</h3>
-                    <form id="recordForm" class="space-y-5">
-                        <div>
-                            <label class="block text-sm font-bold text-slate-600 mb-2">📖 書名 (必填)</label>
-                            <input type="text" id="bookTitle" required class="w-full rounded-2xl p-3 bg-slate-50 kid-border focus:border-sky-400 focus:bg-white outline-none font-bold">
+                    <form id="recordForm" class="space-y-6">
+                        
+                        <!-- 書本基本資訊區塊 -->
+                        <div class="bg-slate-50 p-5 rounded-2xl kid-border border-slate-200">
+                            <h4 class="font-black text-slate-500 mb-4 border-b-2 border-slate-200 pb-2">📚 書本資訊</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-bold text-slate-600 mb-2">📖 書名 (必填)</label>
+                                    <input type="text" id="bookTitle" required class="w-full rounded-xl p-3 bg-white kid-border focus:border-sky-400 outline-none font-bold" placeholder="請輸入書名">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-600 mb-2">👤 作者</label>
+                                    <input type="text" id="bookAuthor" class="w-full rounded-xl p-3 bg-white kid-border focus:border-sky-400 outline-none font-bold" placeholder="請輸入作者">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-600 mb-2">🏢 出版社</label>
+                                    <input type="text" id="bookPublisher" class="w-full rounded-xl p-3 bg-white kid-border focus:border-sky-400 outline-none font-bold" placeholder="請輸入出版社">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-600 mb-2">📄 總頁數</label>
+                                    <input type="number" id="bookPages" min="1" class="w-full rounded-xl p-3 bg-white kid-border focus:border-sky-400 outline-none font-bold" placeholder="例如: 120">
+                                </div>
+                            </div>
                         </div>
-                        <div class="mt-4">
-                            <label class="block text-sm font-bold text-slate-600 mb-2">📝 心得內容</label>
-                            <textarea id="reviewText" rows="5" class="w-full rounded-2xl p-4 bg-slate-50 kid-border focus:border-sky-400 focus:bg-white outline-none resize-none font-bold text-slate-700 leading-relaxed" placeholder="請寫下這本書的心得... (選填)"></textarea>
+
+                        <!-- 任務區塊：文字心得 OR 圖片上傳 -->
+                        <div class="bg-amber-50 p-5 rounded-2xl kid-border border-amber-200">
+                            <div class="flex justify-between items-end mb-4 border-b-2 border-amber-200 pb-2">
+                                <h4 class="font-black text-amber-600">✨ 閱讀任務 (二選一)</h4>
+                                <span class="text-xs font-bold text-amber-500 bg-amber-100 px-2 py-1 rounded">寫心得100~500字 或 上傳照片</span>
+                            </div>
+                            
+                            <div class="space-y-5">
+                                <!-- 文字心得 -->
+                                <div>
+                                    <label class="flex justify-between text-sm font-bold text-slate-600 mb-2">
+                                        <span>📝 選項一：寫下心得分享</span>
+                                        <span id="charCountDisplay" class="text-slate-400">0 字</span>
+                                    </label>
+                                    <textarea id="reviewText" rows="5" class="w-full rounded-xl p-4 bg-white kid-border focus:border-sky-400 outline-none resize-none font-bold text-slate-700 leading-relaxed" placeholder="如果你選擇寫心得，請寫下至少 100 字，最多 500 字喔！"></textarea>
+                                </div>
+                                
+                                <div class="text-center font-black text-slate-300">—— 或是 ——</div>
+
+                                <!-- 圖片上傳 -->
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-600 mb-2">📷 選項二：上傳心得圖片或照片</label>
+                                    <div class="relative bg-white kid-border border-dashed border-sky-300 rounded-xl p-6 text-center hover:bg-sky-50 transition cursor-pointer" id="imageUploadArea" onclick="document.getElementById('reviewImage').click()">
+                                        <input type="file" id="reviewImage" accept="image/*" class="hidden" onchange="previewImage(this)">
+                                        <div id="imagePreviewContainer" class="hidden flex flex-col items-center">
+                                            <img id="imagePreview" src="" alt="預覽圖片" class="max-h-40 rounded-lg kid-border border-slate-200 mb-2">
+                                            <span class="text-xs font-bold text-sky-600 bg-sky-100 px-2 py-1 rounded">點擊可重新選擇圖片</span>
+                                        </div>
+                                        <div id="imageUploadPrompt">
+                                            <span class="text-4xl block mb-2">🖼️</span>
+                                            <span class="font-bold text-sky-600">點擊選擇圖片或拍照</span>
+                                            <p class="text-xs text-slate-400 mt-1">(支援 jpg, png, gif 格式)</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <button type="submit" id="submitBtn" class="w-full bg-sky-400 text-white font-black text-xl py-4 rounded-2xl kid-btn border-sky-500 mt-6">
-                            🚀 魔法送出！
+
+                        <button type="submit" id="submitBtn" class="w-full bg-sky-400 text-white font-black text-xl py-4 rounded-2xl kid-btn border-sky-500 mt-6 shadow-md">
+                            🚀 確認無誤，魔法送出！
                         </button>
                     </form>
                 </div>
@@ -245,7 +299,7 @@
                             <thead>
                                 <tr class="text-slate-400 text-sm">
                                     <th class="px-4 font-bold pb-2 w-1/4">日期</th>
-                                    <th class="px-4 font-bold pb-2 w-1/2">書名</th>
+                                    <th class="px-4 font-bold pb-2 w-1/2">書本資訊</th>
                                     <th class="px-4 font-bold pb-2 text-center w-1/4">狀態</th>
                                 </tr>
                             </thead>
@@ -282,6 +336,7 @@
                         <option value="all">所有狀態</option>
                         <option value="待審核" selected>待審核</option>
                         <option value="已通過">已通過</option>
+                        <option value="退回">退回</option>
                     </select>
                 </div>
 
@@ -289,10 +344,9 @@
                     <table class="min-w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-slate-50 text-slate-500 border-b-2 border-slate-200 whitespace-nowrap">
-                                <th class="p-3 font-bold rounded-tl-xl">日期</th>
-                                <th class="p-3 font-bold">班級</th>
-                                <th class="p-3 font-bold">姓名</th>
-                                <th class="p-3 font-bold">書名</th>
+                                <th class="p-3 font-bold rounded-tl-xl">班級/姓名</th>
+                                <th class="p-3 font-bold">書名/資訊</th>
+                                <th class="p-3 font-bold">心得/圖片</th>
                                 <th class="p-3 font-bold">狀態</th>
                                 <th class="p-3 font-bold rounded-tr-xl text-center">操作</th>
                             </tr>
@@ -315,28 +369,37 @@
         // 🚨 系統核心設定 (請老師在這裡填寫您的 GAS 網址！) 🚨
         // ==========================================
         const YOUR_GAS_URL = "https://script.google.com/macros/s/AKfycbyU4Ljogie6v0WdGG_UEul-gRbS1_U-rIFIWbn717DYU4QMdO8ti40QQ9DU2BRsddhJ/exec"; 
-        const ADMIN_PASSWORD = "S2860885*110"; // 老師登入密碼，可自行修改
+        const ADMIN_PASSWORD = "admin"; // 老師登入密碼，可自行修改
         
         // 狀態變數
         let currentUser = null; 
-        let appData = { records: [] }; // 統一格式儲存資料
+        let appData = { records: [], quotes: [] }; 
         let chartInstance = null;
 
         // ==========================================
-        // 🛡️ 超強資料正規化工具 (防止 GAS 中英文欄位對不起來)
+        // 🛡️ 資料正規化工具 (對接 GAS 後端變數名稱)
         // ==========================================
         function normalizeRecords(rawRecords) {
             if (!Array.isArray(rawRecords)) return [];
             return rawRecords.map(r => {
-                // 自動捕捉各種可能的中英文標題，轉成統一的英文 key
+                // 將後端的狀態代碼對應為中文
+                const statusMap = { 'pending': '待審核', 'approved': '已通過', 'rejected': '退回' };
+                const displayStatus = statusMap[r.status] || r.status || '待審核';
+
                 return {
-                    id: r.id || r.ID || r['編號'] || r.row || '',
-                    date: r.date || r.timestamp || r['時間戳記'] || r['日期'] || r['填表時間'] || '',
-                    class: r.class || r['班級'] || r['年級'] || '',
-                    name: r.name || r['姓名'] || r['學生姓名'] || '',
-                    title: r.title || r['書名'] || r['閱讀書名'] || '',
-                    review: r.review || r['心得'] || r['內容'] || r['心得分享'] || '',
-                    status: r.status || r['狀態'] || r['審核狀態'] || '待審核'
+                    id: r.id,
+                    date: r.time,
+                    class: r.classId,
+                    name: r.name,
+                    title: r.bookTitle,
+                    author: r.author,
+                    publisher: r.publisher,
+                    pages: r.pages,
+                    review: r.review,
+                    hasImage: r.reviewType === 'image' || r.image !== '', // 判斷是否為圖片
+                    imageUrl: r.image, // 儲存真實圖片連結
+                    status: displayStatus,
+                    rawStatus: r.status // 保留原始狀態以備不時之需
                 };
             });
         }
@@ -344,11 +407,50 @@
         // --- 初始化 ---
         window.onload = () => {
             if (YOUR_GAS_URL.includes("請將這段文字替換")) {
-                Swal.fire({ icon: 'warning', title: '尚未設定 GAS 網址', text: '請修改原始碼第430行左右的網址！' });
+                Swal.fire({ icon: 'warning', title: '尚未設定 GAS 網址', text: '請修改原始碼下方的網址！' });
             } else {
                 fetchPublicData(); 
             }
         };
+
+        // --- 字數統計與圖片預覽邏輯 ---
+        document.getElementById('reviewText').addEventListener('input', function() {
+            const count = this.value.trim().length;
+            const display = document.getElementById('charCountDisplay');
+            display.innerText = `${count} 字`;
+            if (count > 0 && count < 100) {
+                display.classList.add('text-rose-500', 'font-black');
+                display.classList.remove('text-slate-400');
+            } else if (count >= 100 && count <= 500) {
+                display.classList.add('text-emerald-500', 'font-black');
+                display.classList.remove('text-slate-400', 'text-rose-500');
+            } else if (count > 500) {
+                display.classList.add('text-rose-500', 'font-black');
+                display.classList.remove('text-emerald-500');
+            } else {
+                display.className = 'text-slate-400';
+            }
+        });
+
+        function previewImage(input) {
+            const prompt = document.getElementById('imageUploadPrompt');
+            const previewContainer = document.getElementById('imagePreviewContainer');
+            const previewImage = document.getElementById('imagePreview');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result; // Data URL (包含 MimeType)
+                    prompt.classList.add('hidden');
+                    previewContainer.classList.remove('hidden');
+                }
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                previewImage.src = "";
+                prompt.classList.remove('hidden');
+                previewContainer.classList.add('hidden');
+            }
+        }
 
         // --- 畫面切換邏輯 ---
         function showView(viewId) {
@@ -403,44 +505,40 @@
         }
 
         // ==========================================
-        // 📡 API 呼叫區
+        // 📡 API 呼叫區 (與 GAS doGet/doPost 溝通)
         // ==========================================
         
         async function fetchPublicData() {
             if (YOUR_GAS_URL.includes("請將這段文字替換")) return;
             try {
-                let res = await fetch(`${YOUR_GAS_URL}?action=getAllRecords`);
-                let data = await res.json();
-                
-                // 萃取陣列並進行「資料正規化」
-                let rawRecords = data.records || data.data || (Array.isArray(data) ? data : []);
-                appData.records = normalizeRecords(rawRecords); 
-                
-                renderPublicDashboard();
-            } catch (err) {
-                console.log("讀取資料發生錯誤:", err);
-                document.getElementById('publicReviewsContainer').innerHTML = '<div class="text-center text-rose-400 py-10 font-bold">資料載入失敗，請確認 GAS 網址與權限。</div>';
-            }
+                // 呼叫 doGet (預設 action=getAll)
+                let res = await fetch(`${YOUR_GAS_URL}`);
+                let json = await res.json();
+                if(json.status === 'success' && json.data) {
+                    appData.records = normalizeRecords(json.data.records || []);
+                    appData.quotes = json.data.quotes || [];
+                    renderPublicDashboard();
+                    updateRandomQuote();
+                }
+            } catch (err) { console.log(err); }
         }
 
         async function fetchStudentData() {
             try {
                 Swal.fire({ title: '讀取紀錄中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                const res = await fetch(`${YOUR_GAS_URL}?action=getAllRecords`); 
-                // 改用統一抓取全部資料，前端自己過濾 (相容性最高)
-                const data = await res.json();
+                // 使用 getPersonal 動作讀取個人資料，節省傳輸量
+                const res = await fetch(`${YOUR_GAS_URL}?action=getPersonal&classId=${encodeURIComponent(currentUser.class)}&name=${encodeURIComponent(currentUser.name)}`); 
+                const json = await res.json();
                 Swal.close();
                 
-                let rawRecords = data.records || data.data || (Array.isArray(data) ? data : []);
-                let allRecords = normalizeRecords(rawRecords);
-                
-                // 過濾出這個學生的資料
-                let myRecords = allRecords.filter(r => r.class == currentUser.class && r.name == currentUser.name);
-                renderStudentRecords(myRecords);
-                
+                if (json.status === 'success' && json.data) {
+                    let myRecords = normalizeRecords(json.data.records || []);
+                    renderStudentRecords(myRecords);
+                } else {
+                    renderStudentRecords([]);
+                }
             } catch (err) {
                 Swal.close();
-                console.log("學生紀錄讀取失敗", err);
                 renderStudentRecords([]);
             }
         }
@@ -448,90 +546,179 @@
         async function fetchTeacherData() {
             try {
                 Swal.fire({ title: '讀取全校紀錄中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                const res = await fetch(`${YOUR_GAS_URL}?action=getAllRecords`);
-                const data = await res.json();
+                const res = await fetch(`${YOUR_GAS_URL}`);
+                const json = await res.json();
                 Swal.close();
-                
-                let rawRecords = data.records || data.data || (Array.isArray(data) ? data : []);
-                appData.records = normalizeRecords(rawRecords); 
-                renderTeacherTable();
+                if (json.status === 'success' && json.data) {
+                    appData.records = normalizeRecords(json.data.records || []); 
+                    renderTeacherTable();
+                }
             } catch (err) {
                 Swal.close();
                 Swal.fire({ icon: 'error', title: '讀取失敗' });
             }
         }
 
-        // 新增紀錄
+        // ⭐ 新增紀錄 (POST 方法與 Base64 處理)
         document.getElementById('recordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // 抓取表單資料
+            const title = document.getElementById('bookTitle').value.trim();
+            const author = document.getElementById('bookAuthor').value.trim();
+            const publisher = document.getElementById('bookPublisher').value.trim();
+            const pages = document.getElementById('bookPages').value.trim();
+            const review = document.getElementById('reviewText').value.trim();
+            const imageFile = document.getElementById('reviewImage').files[0];
+            
+            // 🚨 任務驗證邏輯：字數 100-500 或 上傳照片
+            const reviewLength = review.length;
+            if (!imageFile) {
+                if (reviewLength < 100) {
+                    Swal.fire('字數不足', '如果沒有上傳照片，請寫下至少 100 字的心得喔！', 'warning');
+                    return;
+                }
+                if (reviewLength > 500) {
+                    Swal.fire('字數過多', '心得字數請控制在 500 字以內喔！', 'warning');
+                    return;
+                }
+            } else {
+                if (reviewLength > 500) {
+                    Swal.fire('字數過多', '心得字數請控制在 500 字以內喔！', 'warning');
+                    return;
+                }
+            }
+
             const btn = document.getElementById('submitBtn');
             const originalText = btn.innerHTML;
-            const title = document.getElementById('bookTitle').value.trim();
-            const review = document.getElementById('reviewText').value.trim();
-            if (!title) return;
-
-            btn.innerHTML = '<div class="loader mx-auto"></div>';
+            btn.innerHTML = '<div class="loader mx-auto"></div><span class="text-sm mt-2 block">上傳中，請稍候... (圖片較大時需耐心等候)</span>';
             btn.disabled = true;
 
             try {
-                const params = new URLSearchParams({
+                // 將圖片轉為完整的 Base64 字串 (包含前綴 data:image/png;base64,... 給 GAS 切割)
+                let fullBase64Image = '';
+                if (imageFile) {
+                    fullBase64Image = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => resolve(reader.result); 
+                        reader.readAsDataURL(imageFile);
+                    });
+                }
+
+                // 準備要傳送的資料 JSON (對齊後端的變數名稱)
+                const payload = {
                     action: 'addRecord',
-                    class: currentUser.class,
-                    name: currentUser.name,
-                    title: title,
-                    review: review
+                    data: {
+                        classId: currentUser.class,
+                        name: currentUser.name,
+                        bookTitle: title,
+                        author: author,
+                        publisher: publisher,
+                        pages: pages,
+                        reviewType: imageFile ? 'image' : 'text', // 告知後端類型
+                        review: review,
+                        image: fullBase64Image // 完整含 mime type 的 base64
+                    }
+                };
+
+                const res = await fetch(YOUR_GAS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // 避免 CORS 預檢失敗
+                    body: JSON.stringify(payload)
                 });
-                const res = await fetch(`${YOUR_GAS_URL}?${params.toString()}`);
+                
                 const result = await res.json();
 
-                if (result.status === 'success' || result.success) {
-                    Swal.fire({ icon: 'success', title: '送出成功！' });
+                if (result.status === 'success') {
+                    Swal.fire({ icon: 'success', title: '送出成功！', text: '紀錄已進入待審核狀態。' });
                     document.getElementById('recordForm').reset();
+                    previewImage({files:[]}); // 清空圖片預覽
+                    document.getElementById('charCountDisplay').innerText = '0 字';
+                    document.getElementById('charCountDisplay').className = 'text-slate-400';
                     switchStudentTab('list');
                     fetchStudentData(); 
                 } else {
-                    throw new Error('儲存失敗');
+                    throw new Error(result.message || '儲存失敗');
                 }
             } catch (err) {
-                Swal.fire({ icon: 'error', title: '送出失敗，請稍後再試。' });
+                Swal.fire({ 
+                    icon: 'error', 
+                    title: '上傳失敗', 
+                    text: err.message || '請確認您的網路連線，或圖片檔案是否過大。' 
+                });
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }
         });
 
-        // 老師審核
-        async function updateStatus(rowId, newStatus) {
-            // 如果 GAS 沒有回傳 id (例如直接讀取表單)，可能無法單筆更新。
-            // 這裡保留更新功能，如果報錯請確認 GAS 是否有實作 updateStatus。
-            if(!rowId) {
-                Swal.fire({icon:'warning', title:'無法更新', text:'資料中缺少 ID 或 row 屬性，無法定位要更新的資料。'});
-                return;
+        // 老師審核及管理動作 (使用 POST 對接)
+        async function adminAction(rowId, actionType) {
+            if(!rowId) return;
+            
+            let actionName = '';
+            let payloadData = null;
+            let confirmMsg = '';
+
+            if (actionType === '已通過') {
+                actionName = 'approveRecord';
+            } else if (actionType === '退回') {
+                actionName = 'rejectRecord';
+            } else if (actionType === '待審核') {
+                actionName = 'updateRecord';
+                payloadData = { status: 'pending' }; // 後端預設為 pending
+            } else if (actionType === '刪除') {
+                actionName = 'deleteRecord';
+                confirmMsg = '確定要刪除這筆紀錄嗎？此動作無法復原！';
             }
+
+            if (confirmMsg) {
+                const check = await Swal.fire({
+                    title: '警告', text: confirmMsg, icon: 'warning',
+                    showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: '確定刪除', cancelButtonText: '取消'
+                });
+                if (!check.isConfirmed) return;
+            }
+
             try {
-                Swal.fire({ title: '更新中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                const res = await fetch(`${YOUR_GAS_URL}?action=updateStatus&id=${rowId}&status=${newStatus}`);
+                Swal.fire({ title: '處理中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                
+                const payload = { action: actionName, id: rowId };
+                if (payloadData) payload.data = payloadData;
+
+                const res = await fetch(YOUR_GAS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+                
                 const data = await res.json();
                 Swal.close();
-                if(data.status === 'success' || data.success) {
-                    Swal.fire({ icon: 'success', title: '更新成功', timer: 1000, showConfirmButton: false });
+                
+                if(data.status === 'success') {
+                    Swal.fire({ icon: 'success', title: '操作成功', timer: 1000, showConfirmButton: false });
                     fetchTeacherData(); 
-                } else { throw new Error('更新失敗'); }
-            } catch (err) { Swal.fire({ icon: 'error', title: '更新失敗' }); }
+                } else { throw new Error(data.message || '操作失敗'); }
+            } catch (err) { Swal.fire({ icon: 'error', title: '操作失敗', text: err.message }); }
         }
 
         // ==========================================
-        // 🎨 畫面渲染邏輯 (前端自動計算數據)
+        // 🎨 畫面渲染邏輯
         // ==========================================
         
+        function updateRandomQuote() {
+            if (appData.quotes && appData.quotes.length > 0) {
+                const randomQ = appData.quotes[Math.floor(Math.random() * appData.quotes.length)];
+                document.getElementById('randomQuoteText').innerText = randomQ.text;
+            }
+        }
+
         function renderPublicDashboard() {
             const allRecords = appData.records || [];
-            // 只統計 "已通過" (或未設定狀態的預設為通過，防呆處理)
-            const approved = allRecords.filter(r => r.status === '已通過' || r.status === '審核通過');
+            const approved = allRecords.filter(r => r.status === '已通過');
             
-            // 1. 計算基本數據
             const totalBooks = approved.length;
-            const totalReviews = approved.filter(r => r.review && r.review.trim() !== '').length;
+            const totalReviews = approved.filter(r => (r.review && r.review.trim() !== '') || r.hasImage).length;
             const studentsSet = new Set(approved.filter(r => r.class && r.name).map(r => String(r.class) + String(r.name)));
             const totalStudents = studentsSet.size;
 
@@ -539,39 +726,39 @@
             document.getElementById('globalTotalReviews').innerText = totalReviews;
             document.getElementById('globalTotalStudents').innerText = totalStudents;
 
-            // 2. 年級圖表
+            // 年級圖表
             let chartData = [0, 0, 0, 0, 0, 0];
             approved.forEach(r => {
                 if (r.class) {
-                    const gradeStr = String(r.class).replace(/\D/g, ''); // 濾掉非數字(如: 一年一班)
+                    const gradeStr = String(r.class).replace(/\D/g, ''); 
                     let gradeNum = 0;
-                    if(gradeStr.length >= 3) gradeNum = parseInt(gradeStr.charAt(0)); // 如 101 -> 1
-                    else if(gradeStr.length === 1) gradeNum = parseInt(gradeStr); // 如 1 -> 1
-                    
+                    if(gradeStr.length >= 3) gradeNum = parseInt(gradeStr.charAt(0)); 
+                    else if(gradeStr.length === 1) gradeNum = parseInt(gradeStr); 
                     if (gradeNum >= 1 && gradeNum <= 6) chartData[gradeNum - 1]++;
                 }
             });
             renderChart(chartData);
 
-            // 3. 最新心得
-            const reviews = [...approved].filter(r => r.review && r.review.trim() !== '').reverse().slice(0, 8);
+            // 最新心得
+            const reviews = [...approved].filter(r => (r.review && r.review.trim() !== '') || r.hasImage).reverse().slice(0, 8);
             const rc = document.getElementById('publicReviewsContainer');
             if (reviews.length > 0) {
                 rc.innerHTML = reviews.map(r => `
                     <div class="p-4 bg-sky-50 rounded-2xl kid-border border-sky-100 mb-3">
                         <div class="flex justify-between items-center mb-2">
                             <span class="font-black text-sky-700">${r.class} ${r.name}</span>
-                            <span class="text-xs font-bold text-sky-400">${(r.date || '').split('T')[0]}</span>
+                            <span class="text-xs font-bold text-sky-400">${(r.date || '').split(' ')[0]}</span>
                         </div>
-                        <div class="font-bold text-slate-700 text-sm mb-1">《${r.title}》</div>
-                        <p class="text-slate-600 text-sm">${r.review}</p>
+                        <div class="font-bold text-slate-700 text-sm mb-1">《${r.title}》 ${r.author ? `<span class="text-xs text-slate-400">/ ${r.author}</span>` : ''}</div>
+                        ${r.review ? `<p class="text-slate-600 text-sm">${r.review.substring(0, 50)}${r.review.length > 50 ? '...' : ''}</p>` : ''}
+                        ${r.hasImage ? `<div class="text-xs font-bold text-emerald-500 mt-2 flex items-center gap-1"><span>📷</span> 附帶圖片心得</div>` : ''}
                     </div>
                 `).join('');
             } else {
                 rc.innerHTML = '<div class="text-center text-slate-400 py-10 font-bold">目前還沒有心得發表，趕快成為第一位吧！</div>';
             }
 
-            // 4. 榮譽榜
+            // 榮譽榜
             const userCounts = {};
             approved.forEach(r => {
                 if(!r.name || !r.class) return;
@@ -583,8 +770,7 @@
                     const [c, n] = nameString.split(' ');
                     return { class: c, name: n, count: count };
                 })
-                .sort((a, b) => b.count - a.count)
-                .slice(0, 9); // 取前9名
+                .sort((a, b) => b.count - a.count).slice(0, 9);
 
             const lc = document.getElementById('leaderboardContainer');
             if (leaderboard.length > 0) {
@@ -621,15 +807,24 @@
                 noDataMsg.classList.remove('hidden');
             } else {
                 noDataMsg.classList.add('hidden');
-                tbody.innerHTML = records.map(r => {
+                // 反轉陣列，讓最新資料排在最上面
+                const sortedRecords = [...records].reverse();
+                
+                tbody.innerHTML = sortedRecords.map(r => {
                     if (r.status === '已通過') approvedCount++;
-                    if (r.status === '待審核') pendingCount++;
+                    if (r.status === '待審核' || r.status === '退回') pendingCount++;
                     
-                    let statusClass = r.status === '已通過' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-amber-100 text-amber-700 border-amber-200';
+                    let statusClass = r.status === '已通過' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 
+                                      r.status === '退回' ? 'bg-rose-100 text-rose-700 border-rose-200' :
+                                      'bg-amber-100 text-amber-700 border-amber-200';
                     return `
                         <tr class="bg-slate-50 transition hover:bg-sky-50">
-                            <td class="p-3 md:p-4 rounded-l-2xl kid-border border-r-0 border-slate-100 text-xs md:text-sm text-slate-500">${(r.date || '').split('T')[0]}</td>
-                            <td class="p-3 md:p-4 kid-border border-l-0 border-r-0 border-slate-100 font-bold text-sky-700">${r.title || '無書名'}</td>
+                            <td class="p-3 md:p-4 rounded-l-2xl kid-border border-r-0 border-slate-100 text-xs md:text-sm text-slate-500">${(r.date || '').split(' ')[0]}</td>
+                            <td class="p-3 md:p-4 kid-border border-l-0 border-r-0 border-slate-100">
+                                <div class="font-bold text-sky-700">${r.title || '無書名'}</div>
+                                ${r.author ? `<div class="text-xs text-slate-400 mt-1">作者: ${r.author}</div>` : ''}
+                                ${r.hasImage ? `<div class="text-xs text-emerald-500 mt-1">📷 已附圖</div>` : ''}
+                            </td>
                             <td class="p-3 md:p-4 rounded-r-2xl kid-border border-l-0 border-slate-100 text-center">
                                 <span class="px-2 py-1 md:px-3 md:py-1 rounded-full text-xs font-bold border whitespace-nowrap ${statusClass}">${r.status}</span>
                             </td>
@@ -664,30 +859,41 @@
             const filter = document.getElementById('statusFilter').value;
             const records = appData.records || [];
             
-            // 最新紀錄排前面
             const sortedRecords = [...records].reverse();
             const filtered = filter === 'all' ? sortedRecords : sortedRecords.filter(r => r.status === filter);
             
             if(filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 font-bold">目前沒有資料</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-bold">目前沒有資料</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = filtered.map(r => `
-                <tr class="hover:bg-slate-100 transition border-b border-slate-100">
-                    <td class="p-3 text-sm text-slate-500 whitespace-nowrap">${(r.date || '').split('T')[0]}</td>
-                    <td class="p-3 font-bold whitespace-nowrap">${r.class || ''}</td>
-                    <td class="p-3 font-bold text-sky-600 whitespace-nowrap">${r.name || ''}</td>
-                    <td class="p-3 font-bold">${r.title || ''}</td>
+                <tr class="hover:bg-slate-100 transition border-b border-slate-100 text-sm">
                     <td class="p-3 whitespace-nowrap">
-                        <span class="px-2 py-1 rounded text-xs font-bold ${r.status === '已通過' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${r.status}</span>
+                        <div class="font-black text-slate-700">${r.class || ''}</div>
+                        <div class="text-sky-600 font-bold">${r.name || ''}</div>
+                        <div class="text-xs text-slate-400">${(r.date || '').split(' ')[0]}</div>
+                    </td>
+                    <td class="p-3">
+                        <div class="font-bold text-slate-800">${r.title || ''}</div>
+                        ${r.author ? `<div class="text-xs text-slate-500">作者: ${r.author}</div>` : ''}
+                        ${r.publisher ? `<div class="text-xs text-slate-500">出版: ${r.publisher}</div>` : ''}
+                        ${r.pages ? `<div class="text-xs text-slate-500">頁數: ${r.pages} 頁</div>` : ''}
+                    </td>
+                    <td class="p-3">
+                        ${r.review ? `<div class="text-xs text-slate-600 max-w-[150px] truncate" title="${r.review}">${r.review}</div>` : ''}
+                        ${r.hasImage && r.imageUrl ? `<a href="${r.imageUrl}" target="_blank" class="inline-block mt-1 px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded font-bold hover:bg-emerald-200 transition shadow-sm">📷 查看圖片</a>` : (!r.review ? '<span class="text-slate-300 text-xs">無圖無文</span>' : '')}
+                    </td>
+                    <td class="p-3 whitespace-nowrap">
+                        <span class="px-2 py-1 rounded text-xs font-bold ${r.status === '已通過' ? 'bg-emerald-100 text-emerald-700' : (r.status === '退回' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700')}">${r.status}</span>
                     </td>
                     <td class="p-3 text-center whitespace-nowrap">
                         ${r.status === '待審核' ? `
-                            <button onclick="updateStatus('${r.id}', '已通過')" class="bg-emerald-400 text-white px-3 py-1 rounded-lg font-bold hover:bg-emerald-500 shadow-sm mr-1">通過</button>
-                            <button onclick="updateStatus('${r.id}', '退回')" class="bg-rose-400 text-white px-3 py-1 rounded-lg font-bold hover:bg-rose-500 shadow-sm">退回</button>
+                            <button onclick="adminAction('${r.id}', '已通過')" class="bg-emerald-400 text-white px-2 py-1 rounded text-xs font-bold hover:bg-emerald-500 shadow-sm mr-1">通過</button>
+                            <button onclick="adminAction('${r.id}', '退回')" class="bg-rose-400 text-white px-2 py-1 rounded text-xs font-bold hover:bg-rose-500 shadow-sm">退回</button>
                         ` : `
-                            <button onclick="updateStatus('${r.id}', '待審核')" class="bg-slate-200 text-slate-600 px-3 py-1 rounded-lg font-bold hover:bg-slate-300 text-xs">重設</button>
+                            <button onclick="adminAction('${r.id}', '待審核')" class="bg-slate-200 text-slate-600 px-2 py-1 rounded text-xs font-bold hover:bg-slate-300 mr-1">重設</button>
+                            <button onclick="adminAction('${r.id}', '刪除')" class="bg-rose-100 text-rose-600 px-2 py-1 rounded text-xs font-bold hover:bg-rose-200">刪除</button>
                         `}
                     </td>
                 </tr>
@@ -715,7 +921,7 @@
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { dash: [4, 4] } },
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { dash: [4, 4] }, ticks: { precision: 0 } },
                         x: { grid: { display: false } }
                     }
                 }
