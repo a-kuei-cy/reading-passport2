@@ -10,6 +10,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- 使用 Chart.js 繪製統計圖表 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 使用 PapaParse 處理 CSV 匯入匯出 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Noto+Sans+TC:wght@400;700;900&display=swap');
         
@@ -21,7 +23,7 @@
         /* 童趣風格樣式 */
         .kid-shadow { box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1); }
         .kid-border { border: 3px solid #cbd5e1; }
-        .kid-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 3px solid transparent; }
+        .kid-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 3px solid transparent; cursor: pointer; }
         .kid-btn:hover { transform: translateY(-3px) scale(1.02); box-shadow: 4px 6px 0px rgba(0, 0, 0, 0.15); }
         .kid-btn:active { transform: translateY(0); box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.1); }
         
@@ -213,7 +215,7 @@
                 <button onclick="switchStudentTab('list')" id="tab-stu-list" class="stu-tab whitespace-nowrap px-8 py-3 rounded-2xl font-black text-lg transition kid-btn bg-white text-slate-500 kid-border hover:bg-slate-50">📖 我的護照</button>
             </div>
 
-            <!-- 內容區塊: 新增紀錄 (擴充版) -->
+            <!-- 內容區塊: 新增紀錄 -->
             <div id="stu-content-add" class="stu-content">
                 <div class="bg-white rounded-3xl p-6 md:p-8 kid-border kid-shadow border-slate-200">
                     <h3 class="text-2xl font-black mb-6 text-sky-600 flex items-center gap-2"><span>📝</span> 填寫閱讀紀錄</h3>
@@ -329,9 +331,17 @@
                 </div>
             </div>
 
-            <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200">
+            <!-- 老師後台頁籤 -->
+            <div class="flex overflow-x-auto no-scrollbar gap-3 mb-6 pb-2">
+                <button onclick="switchTeacherTab('review')" id="tab-tc-review" class="tc-tab whitespace-nowrap px-6 py-2 rounded-xl font-black text-md transition kid-btn bg-emerald-400 text-emerald-900 border-emerald-500">✅ 審核列表</button>
+                <button onclick="switchTeacherTab('quotes')" id="tab-tc-quotes" class="tc-tab whitespace-nowrap px-6 py-2 rounded-xl font-black text-md transition kid-btn bg-white text-slate-500 kid-border hover:bg-slate-50">💡 金句管理</button>
+                <button onclick="switchTeacherTab('system')" id="tab-tc-system" class="tc-tab whitespace-nowrap px-6 py-2 rounded-xl font-black text-md transition kid-btn bg-white text-slate-500 kid-border hover:bg-slate-50">⚙️ 系統/匯入匯出</button>
+            </div>
+
+            <!-- 頁籤內容：審核列表 -->
+            <div id="tc-content-review" class="tc-content bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200">
                 <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-2xl font-black text-emerald-600 flex items-center gap-2"><span>✅</span> 審核列表</h3>
+                    <h3 class="text-2xl font-black text-emerald-600 flex items-center gap-2"><span>📋</span> 審核列表與編輯資料</h3>
                     <select id="statusFilter" onchange="renderTeacherTable()" class="p-2 rounded-xl kid-border bg-slate-50 font-bold text-slate-600 outline-none">
                         <option value="all">所有狀態</option>
                         <option value="待審核" selected>待審核</option>
@@ -348,13 +358,63 @@
                                 <th class="p-3 font-bold">書名/資訊</th>
                                 <th class="p-3 font-bold">心得/圖片</th>
                                 <th class="p-3 font-bold">狀態</th>
-                                <th class="p-3 font-bold rounded-tr-xl text-center">操作</th>
+                                <th class="p-3 font-bold rounded-tr-xl text-center">操作/編修</th>
                             </tr>
                         </thead>
                         <tbody id="teacherTableBody">
                             <!-- 動態生成 -->
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- 頁籤內容：金句管理 -->
+            <div id="tc-content-quotes" class="tc-content hidden bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-black text-amber-500 flex items-center gap-2"><span>💡</span> 每日閱讀金句管理</h3>
+                    <button onclick="handleAddQuote()" class="bg-amber-400 text-amber-900 px-4 py-2 rounded-xl font-black kid-btn border-amber-500 shadow-sm">➕ 新增金句</button>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-amber-50 text-amber-700 border-b-2 border-amber-200">
+                                <th class="p-3 font-bold w-3/4 rounded-tl-xl">金句內容</th>
+                                <th class="p-3 font-bold">建立時間</th>
+                                <th class="p-3 font-bold text-center rounded-tr-xl">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="quotesTableBody">
+                            <!-- 動態生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 頁籤內容：匯入與匯出 -->
+            <div id="tc-content-system" class="tc-content hidden bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200">
+                <h3 class="text-2xl font-black text-indigo-500 flex items-center gap-2 mb-6"><span>⚙️</span> 系統資料管理</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- 匯出區塊 -->
+                    <div class="bg-indigo-50 p-6 rounded-2xl kid-border border-indigo-200">
+                        <div class="text-4xl mb-3">📤</div>
+                        <h4 class="text-xl font-black text-indigo-700 mb-2">匯出資料 (Export)</h4>
+                        <p class="text-sm font-bold text-indigo-500 mb-4">將所有的學生打卡紀錄下載為 CSV 檔案，可使用 Excel 或 Google 試算表開啟。</p>
+                        <button onclick="exportDataToCSV()" class="bg-indigo-400 text-white w-full py-3 rounded-xl font-black kid-btn border-indigo-500 shadow-sm">📥 下載 CSV 檔</button>
+                    </div>
+
+                    <!-- 匯入區塊 -->
+                    <div class="bg-fuchsia-50 p-6 rounded-2xl kid-border border-fuchsia-200">
+                        <div class="text-4xl mb-3">📥</div>
+                        <h4 class="text-xl font-black text-fuchsia-700 mb-2">匯入資料 (Import)</h4>
+                        <p class="text-sm font-bold text-fuchsia-500 mb-4">批次上傳 CSV 檔匯入舊紀錄。檔案需包含：班級、姓名、書名、作者、出版社、頁數、心得。</p>
+                        
+                        <div class="relative bg-white kid-border border-dashed border-fuchsia-300 rounded-xl p-4 text-center hover:bg-fuchsia-100 transition cursor-pointer" onclick="document.getElementById('csvFileInput').click()">
+                            <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleCSVImport(event)">
+                            <span class="font-bold text-fuchsia-600">點擊選擇 CSV 檔案上傳</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -369,42 +429,30 @@
         // 🚨 系統核心設定 (請老師在這裡填寫您的 GAS 網址！) 🚨
         // ==========================================
         const YOUR_GAS_URL = "https://script.google.com/macros/s/AKfycbyU4Ljogie6v0WdGG_UEul-gRbS1_U-rIFIWbn717DYU4QMdO8ti40QQ9DU2BRsddhJ/exec"; 
-        const ADMIN_PASSWORD = "admin"; // 老師登入密碼，可自行修改
+        const ADMIN_PASSWORD = "admin"; // 老師登入密碼
         
         // 狀態變數
         let currentUser = null; 
         let appData = { records: [], quotes: [] }; 
         let chartInstance = null;
 
-        // ==========================================
-        // 🛡️ 資料正規化工具 (對接 GAS 後端變數名稱)
-        // ==========================================
+        // --- 資料正規化工具 ---
         function normalizeRecords(rawRecords) {
             if (!Array.isArray(rawRecords)) return [];
             return rawRecords.map(r => {
-                // 將後端的狀態代碼對應為中文
                 const statusMap = { 'pending': '待審核', 'approved': '已通過', 'rejected': '退回' };
                 const displayStatus = statusMap[r.status] || r.status || '待審核';
-
                 return {
-                    id: r.id,
-                    date: r.time,
-                    class: r.classId,
-                    name: r.name,
-                    title: r.bookTitle,
-                    author: r.author,
-                    publisher: r.publisher,
-                    pages: r.pages,
-                    review: r.review,
-                    hasImage: r.reviewType === 'image' || r.image !== '', // 判斷是否為圖片
-                    imageUrl: r.image, // 儲存真實圖片連結
-                    status: displayStatus,
-                    rawStatus: r.status // 保留原始狀態以備不時之需
+                    id: r.id, date: r.time, class: r.classId, name: r.name,
+                    title: r.bookTitle, author: r.author, publisher: r.publisher,
+                    pages: r.pages, review: r.review, 
+                    reviewType: r.reviewType, // 保留原始 type，辨識純文字或圖片
+                    hasImage: r.reviewType === 'image' || r.image !== '',
+                    imageUrl: r.image, status: displayStatus, rawStatus: r.status
                 };
             });
         }
 
-        // --- 初始化 ---
         window.onload = () => {
             if (YOUR_GAS_URL.includes("請將這段文字替換")) {
                 Swal.fire({ icon: 'warning', title: '尚未設定 GAS 網址', text: '請修改原始碼下方的網址！' });
@@ -440,7 +488,7 @@
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    previewImage.src = e.target.result; // Data URL (包含 MimeType)
+                    previewImage.src = e.target.result;
                     prompt.classList.add('hidden');
                     previewContainer.classList.remove('hidden');
                 }
@@ -469,6 +517,18 @@
             const activeTab = document.getElementById(`tab-stu-${tabId}`);
             activeTab.classList.remove('bg-white', 'text-slate-500');
             activeTab.classList.add('bg-amber-400', 'text-amber-900', 'border-amber-500');
+        }
+
+        function switchTeacherTab(tabId) {
+            document.querySelectorAll('.tc-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tc-tab').forEach(el => {
+                el.classList.remove('bg-emerald-400', 'text-emerald-900', 'border-emerald-500');
+                el.classList.add('bg-white', 'text-slate-500');
+            });
+            document.getElementById(`tc-content-${tabId}`).classList.remove('hidden');
+            const activeTab = document.getElementById(`tab-tc-${tabId}`);
+            activeTab.classList.remove('bg-white', 'text-slate-500');
+            activeTab.classList.add('bg-emerald-400', 'text-emerald-900', 'border-emerald-500');
         }
 
         // --- 登入/登出 ---
@@ -505,13 +565,11 @@
         }
 
         // ==========================================
-        // 📡 API 呼叫區 (與 GAS doGet/doPost 溝通)
+        // 📡 API 呼叫區
         // ==========================================
-        
         async function fetchPublicData() {
             if (YOUR_GAS_URL.includes("請將這段文字替換")) return;
             try {
-                // 呼叫 doGet (預設 action=getAll)
                 let res = await fetch(`${YOUR_GAS_URL}`);
                 let json = await res.json();
                 if(json.status === 'success' && json.data) {
@@ -526,21 +584,14 @@
         async function fetchStudentData() {
             try {
                 Swal.fire({ title: '讀取紀錄中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                // 使用 getPersonal 動作讀取個人資料，節省傳輸量
                 const res = await fetch(`${YOUR_GAS_URL}?action=getPersonal&classId=${encodeURIComponent(currentUser.class)}&name=${encodeURIComponent(currentUser.name)}`); 
                 const json = await res.json();
                 Swal.close();
-                
                 if (json.status === 'success' && json.data) {
                     let myRecords = normalizeRecords(json.data.records || []);
                     renderStudentRecords(myRecords);
-                } else {
-                    renderStudentRecords([]);
-                }
-            } catch (err) {
-                Swal.close();
-                renderStudentRecords([]);
-            }
+                } else { renderStudentRecords([]); }
+            } catch (err) { Swal.close(); renderStudentRecords([]); }
         }
 
         async function fetchTeacherData() {
@@ -551,7 +602,9 @@
                 Swal.close();
                 if (json.status === 'success' && json.data) {
                     appData.records = normalizeRecords(json.data.records || []); 
+                    appData.quotes = json.data.quotes || [];
                     renderTeacherTable();
+                    renderQuotesTable(); // 渲染金句表格
                 }
             } catch (err) {
                 Swal.close();
@@ -559,11 +612,23 @@
             }
         }
 
-        // ⭐ 新增紀錄 (POST 方法與 Base64 處理)
+        // 通用 POST 請求器
+        async function postGasAction(actionName, payloadId = null, payloadData = null) {
+            const payload = { action: actionName };
+            if (payloadId) payload.id = payloadId;
+            if (payloadData) payload.data = payloadData;
+
+            const res = await fetch(YOUR_GAS_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            });
+            return await res.json();
+        }
+
+        // ⭐ 學生新增紀錄
         document.getElementById('recordForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            // 抓取表單資料
             const title = document.getElementById('bookTitle').value.trim();
             const author = document.getElementById('bookAuthor').value.trim();
             const publisher = document.getElementById('bookPublisher').value.trim();
@@ -571,31 +636,20 @@
             const review = document.getElementById('reviewText').value.trim();
             const imageFile = document.getElementById('reviewImage').files[0];
             
-            // 🚨 任務驗證邏輯：字數 100-500 或 上傳照片
             const reviewLength = review.length;
             if (!imageFile) {
-                if (reviewLength < 100) {
-                    Swal.fire('字數不足', '如果沒有上傳照片，請寫下至少 100 字的心得喔！', 'warning');
-                    return;
-                }
-                if (reviewLength > 500) {
-                    Swal.fire('字數過多', '心得字數請控制在 500 字以內喔！', 'warning');
-                    return;
-                }
+                if (reviewLength < 100) return Swal.fire('字數不足', '如果沒有上傳照片，請寫下至少 100 字的心得喔！', 'warning');
+                if (reviewLength > 500) return Swal.fire('字數過多', '心得字數請控制在 500 字以內喔！', 'warning');
             } else {
-                if (reviewLength > 500) {
-                    Swal.fire('字數過多', '心得字數請控制在 500 字以內喔！', 'warning');
-                    return;
-                }
+                if (reviewLength > 500) return Swal.fire('字數過多', '心得字數請控制在 500 字以內喔！', 'warning');
             }
 
             const btn = document.getElementById('submitBtn');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<div class="loader mx-auto"></div><span class="text-sm mt-2 block">上傳中，請稍候... (圖片較大時需耐心等候)</span>';
+            btn.innerHTML = '<div class="loader mx-auto"></div><span class="text-sm mt-2 block">上傳中，請稍候...</span>';
             btn.disabled = true;
 
             try {
-                // 將圖片轉為完整的 Base64 字串 (包含前綴 data:image/png;base64,... 給 GAS 切割)
                 let fullBase64Image = '';
                 if (imageFile) {
                     fullBase64Image = await new Promise((resolve) => {
@@ -604,106 +658,258 @@
                         reader.readAsDataURL(imageFile);
                     });
                 }
-
-                // 準備要傳送的資料 JSON (對齊後端的變數名稱)
-                const payload = {
-                    action: 'addRecord',
-                    data: {
-                        classId: currentUser.class,
-                        name: currentUser.name,
-                        bookTitle: title,
-                        author: author,
-                        publisher: publisher,
-                        pages: pages,
-                        reviewType: imageFile ? 'image' : 'text', // 告知後端類型
-                        review: review,
-                        image: fullBase64Image // 完整含 mime type 的 base64
-                    }
+                const data = {
+                    classId: currentUser.class, name: currentUser.name, bookTitle: title, author: author,
+                    publisher: publisher, pages: pages, reviewType: imageFile ? 'image' : 'text', 
+                    review: review, image: fullBase64Image
                 };
 
-                const res = await fetch(YOUR_GAS_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // 避免 CORS 預檢失敗
-                    body: JSON.stringify(payload)
-                });
-                
-                const result = await res.json();
-
+                const result = await postGasAction('addRecord', null, data);
                 if (result.status === 'success') {
                     Swal.fire({ icon: 'success', title: '送出成功！', text: '紀錄已進入待審核狀態。' });
                     document.getElementById('recordForm').reset();
-                    previewImage({files:[]}); // 清空圖片預覽
+                    previewImage({files:[]}); 
                     document.getElementById('charCountDisplay').innerText = '0 字';
                     document.getElementById('charCountDisplay').className = 'text-slate-400';
                     switchStudentTab('list');
                     fetchStudentData(); 
-                } else {
-                    throw new Error(result.message || '儲存失敗');
-                }
-            } catch (err) {
-                Swal.fire({ 
-                    icon: 'error', 
-                    title: '上傳失敗', 
-                    text: err.message || '請確認您的網路連線，或圖片檔案是否過大。' 
-                });
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
+                } else throw new Error(result.message);
+            } catch (err) { Swal.fire({ icon: 'error', title: '上傳失敗', text: err.message }); }
+            finally { btn.innerHTML = originalText; btn.disabled = false; }
         });
 
-        // 老師審核及管理動作 (使用 POST 對接)
+        // ==========================================
+        // 🛠️ 老師專屬管理功能 (審核、編修、金句、匯出匯入)
+        // ==========================================
+
+        // 1. 審核狀態更改 / 刪除
         async function adminAction(rowId, actionType) {
             if(!rowId) return;
-            
-            let actionName = '';
-            let payloadData = null;
-            let confirmMsg = '';
+            let actionName = ''; let payloadData = null; let confirmMsg = '';
 
-            if (actionType === '已通過') {
-                actionName = 'approveRecord';
-            } else if (actionType === '退回') {
-                actionName = 'rejectRecord';
-            } else if (actionType === '待審核') {
-                actionName = 'updateRecord';
-                payloadData = { status: 'pending' }; // 後端預設為 pending
-            } else if (actionType === '刪除') {
-                actionName = 'deleteRecord';
-                confirmMsg = '確定要刪除這筆紀錄嗎？此動作無法復原！';
-            }
+            if (actionType === '已通過') actionName = 'approveRecord';
+            else if (actionType === '退回') actionName = 'rejectRecord';
+            else if (actionType === '待審核') { actionName = 'updateRecord'; payloadData = { status: 'pending' }; }
+            else if (actionType === '刪除') { actionName = 'deleteRecord'; confirmMsg = '確定要刪除這筆紀錄嗎？此動作無法復原！'; }
 
             if (confirmMsg) {
-                const check = await Swal.fire({
-                    title: '警告', text: confirmMsg, icon: 'warning',
-                    showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: '確定刪除', cancelButtonText: '取消'
-                });
+                const check = await Swal.fire({ title: '警告', text: confirmMsg, icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: '確定刪除', cancelButtonText: '取消' });
                 if (!check.isConfirmed) return;
             }
 
             try {
                 Swal.fire({ title: '處理中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-                
-                const payload = { action: actionName, id: rowId };
-                if (payloadData) payload.data = payloadData;
-
-                const res = await fetch(YOUR_GAS_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(payload)
-                });
-                
-                const data = await res.json();
+                const result = await postGasAction(actionName, rowId, payloadData);
                 Swal.close();
-                
-                if(data.status === 'success') {
+                if(result.status === 'success') {
                     Swal.fire({ icon: 'success', title: '操作成功', timer: 1000, showConfirmButton: false });
                     fetchTeacherData(); 
-                } else { throw new Error(data.message || '操作失敗'); }
+                } else throw new Error(result.message);
             } catch (err) { Swal.fire({ icon: 'error', title: '操作失敗', text: err.message }); }
         }
 
+        // 2. 📝 編修學生資料 (老師編輯)
+        async function handleEditRecord(id) {
+            const record = appData.records.find(r => r.id === id);
+            if(!record) return;
+
+            const { value: formValues } = await Swal.fire({
+                title: '✏️ 編輯學生紀錄',
+                html: `
+                    <div class="text-left space-y-3 mt-4 text-sm font-bold">
+                        <div><label class="text-slate-500">書名</label><input id="swal-title" class="w-full p-2 border rounded mt-1 bg-slate-50" value="${record.title}"></div>
+                        <div class="flex gap-2">
+                            <div class="flex-1"><label class="text-slate-500">作者</label><input id="swal-author" class="w-full p-2 border rounded mt-1 bg-slate-50" value="${record.author}"></div>
+                            <div class="flex-1"><label class="text-slate-500">出版社</label><input id="swal-publisher" class="w-full p-2 border rounded mt-1 bg-slate-50" value="${record.publisher}"></div>
+                        </div>
+                        <div><label class="text-slate-500">頁數</label><input id="swal-pages" type="number" class="w-full p-2 border rounded mt-1 bg-slate-50" value="${record.pages}"></div>
+                        ${record.reviewType !== 'image' ? `<div><label class="text-slate-500">純文字心得</label><textarea id="swal-review" rows="4" class="w-full p-2 border rounded mt-1 bg-slate-50">${record.review}</textarea></div>` : '<p class="text-emerald-500 mt-2">※ 這是圖片心得，無法在此修改內容文字。</p>'}
+                    </div>
+                `,
+                showCancelButton: true, confirmButtonText: '💾 儲存修改', cancelButtonText: '取消',
+                preConfirm: () => {
+                    return {
+                        bookTitle: document.getElementById('swal-title').value,
+                        author: document.getElementById('swal-author').value,
+                        publisher: document.getElementById('swal-publisher').value,
+                        pages: document.getElementById('swal-pages').value,
+                        review: record.reviewType !== 'image' ? document.getElementById('swal-review').value : undefined
+                    }
+                }
+            });
+
+            if (formValues) {
+                try {
+                    Swal.fire({ title: '儲存中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                    const result = await postGasAction('updateRecord', id, formValues);
+                    Swal.close();
+                    if(result.status === 'success') {
+                        Swal.fire({ icon: 'success', title: '更新成功！', timer: 1000, showConfirmButton: false });
+                        fetchTeacherData();
+                    } else throw new Error(result.message);
+                } catch (err) { Swal.fire('錯誤', err.message, 'error'); }
+            }
+        }
+
+        // 3. 💡 金句管理 (新增、編輯、刪除)
+        async function handleAddQuote() {
+            const { value: text } = await Swal.fire({
+                title: '新增閱讀金句', input: 'textarea', inputPlaceholder: '請輸入金句內容...',
+                showCancelButton: true, confirmButtonText: '新增', cancelButtonText: '取消',
+                inputValidator: (value) => { if (!value) return '內容不能為空喔！'; }
+            });
+            if (text) {
+                try {
+                    Swal.fire({ title: '新增中...', didOpen: () => Swal.showLoading() });
+                    const result = await postGasAction('addQuote', null, { text: text });
+                    if(result.status === 'success') {
+                        Swal.fire({ icon: 'success', title: '新增成功', timer:1000, showConfirmButton: false });
+                        fetchTeacherData();
+                    }
+                } catch(e) { Swal.fire('錯誤', '新增失敗', 'error'); }
+            }
+        }
+
+        async function handleEditQuote(id, currentText) {
+            const { value: text } = await Swal.fire({
+                title: '編輯閱讀金句', input: 'textarea', inputValue: currentText,
+                showCancelButton: true, confirmButtonText: '儲存', cancelButtonText: '取消',
+                inputValidator: (value) => { if (!value) return '內容不能為空喔！'; }
+            });
+            if (text && text !== currentText) {
+                try {
+                    Swal.fire({ title: '儲存中...', didOpen: () => Swal.showLoading() });
+                    const result = await postGasAction('updateQuote', id, { text: text });
+                    if(result.status === 'success') {
+                        Swal.fire({ icon: 'success', title: '更新成功', timer:1000, showConfirmButton: false });
+                        fetchTeacherData();
+                    }
+                } catch(e) { Swal.fire('錯誤', '更新失敗', 'error'); }
+            }
+        }
+
+        async function handleDeleteQuote(id) {
+            const check = await Swal.fire({ title: '確定要刪除這句金句嗎？', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: '刪除' });
+            if(check.isConfirmed) {
+                try {
+                    Swal.fire({ title: '刪除中...', didOpen: () => Swal.showLoading() });
+                    const result = await postGasAction('deleteQuote', id);
+                    if(result.status === 'success') {
+                        Swal.fire({ icon: 'success', title: '刪除成功', timer:1000, showConfirmButton: false });
+                        fetchTeacherData();
+                    }
+                } catch(e) { Swal.fire('錯誤', '刪除失敗', 'error'); }
+            }
+        }
+
+        function renderQuotesTable() {
+            const tbody = document.getElementById('quotesTableBody');
+            if(!appData.quotes || appData.quotes.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-amber-500 font-bold">目前沒有金句</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = appData.quotes.map(q => `
+                <tr class="border-b border-amber-100 hover:bg-amber-50">
+                    <td class="p-3 text-slate-700 font-bold">${q.text}</td>
+                    <td class="p-3 text-sm text-slate-400">${q.time}</td>
+                    <td class="p-3 text-center whitespace-nowrap">
+                        <button onclick="handleEditQuote('${q.id}', '${q.text}')" class="bg-amber-100 text-amber-700 px-2 py-1 rounded text-xs font-bold hover:bg-amber-200 mr-1">✏️ 編輯</button>
+                        <button onclick="handleDeleteQuote('${q.id}')" class="bg-rose-100 text-rose-600 px-2 py-1 rounded text-xs font-bold hover:bg-rose-200">🗑️ 刪除</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 4. ⚙️ 匯出資料 (使用 PapaParse 將 JSON 轉 CSV)
+        function exportDataToCSV() {
+            if(!appData.records || appData.records.length === 0) return Swal.fire('沒有資料', '目前沒有任何紀錄可以匯出', 'info');
+            
+            // 整理匯出格式
+            const exportData = appData.records.map(r => ({
+                "時間": r.date,
+                "班級": r.class,
+                "姓名": r.name,
+                "書名": r.title,
+                "作者": r.author,
+                "出版社": r.publisher,
+                "頁數": r.pages,
+                "心得類型": r.reviewType,
+                "心得或網址": r.reviewType === 'image' ? r.imageUrl : r.review,
+                "狀態": r.status
+            }));
+
+            // 加上 BOM 避免 Excel 中文亂碼
+            const csv = "\uFEFF" + Papa.unparse(exportData);
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `興嘉閱讀護照_匯出資料_${new Date().getTime()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 5. ⚙️ 匯入資料 (讀取 CSV 並透過迴圈呼叫 addRecord API)
+        function handleCSVImport(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                complete: async function(results) {
+                    const data = results.data;
+                    if(data.length === 0) return Swal.fire('錯誤', 'CSV 檔案是空的', 'error');
+
+                    const check = await Swal.fire({
+                        title: '確認匯入',
+                        text: `系統將自動批次匯入 ${data.length} 筆資料 (預設為純文字心得)，請確認是否執行？`,
+                        icon: 'question', showCancelButton: true, confirmButtonText: '開始匯入'
+                    });
+
+                    if(check.isConfirmed) {
+                        Swal.fire({
+                            title: '批次匯入中',
+                            html: '請勿關閉網頁... <br>進度: <b>0</b> / ' + data.length,
+                            allowOutsideClick: false, didOpen: () => Swal.showLoading()
+                        });
+
+                        let successCount = 0;
+                        for(let i=0; i<data.length; i++) {
+                            const row = data[i];
+                            // 配合後端的 payload
+                            const payloadData = {
+                                classId: row['班級'] || '未填',
+                                name: row['姓名'] || '未知',
+                                bookTitle: row['書名'] || '無書名',
+                                author: row['作者'] || '',
+                                publisher: row['出版社'] || '',
+                                pages: row['頁數'] || '',
+                                reviewType: 'text', // 匯入預設都用文字模式
+                                review: row['心得'] || row['心得或網址'] || ''
+                            };
+                            
+                            try {
+                                const res = await postGasAction('addRecord', null, payloadData);
+                                if(res.status === 'success') successCount++;
+                            } catch(e) { console.error("Row import failed", e); }
+
+                            Swal.getHtmlContainer().querySelector('b').textContent = (i + 1);
+                        }
+
+                        Swal.fire('匯入完成', `成功匯入了 ${successCount} 筆資料！\n(所有新資料預設為待審核狀態)`, 'success');
+                        document.getElementById('csvFileInput').value = ""; // 清空 input
+                        fetchTeacherData();
+                    } else {
+                        document.getElementById('csvFileInput').value = "";
+                    }
+                }
+            });
+        }
+
         // ==========================================
-        // 🎨 畫面渲染邏輯
+        // 🎨 畫面渲染邏輯 (其餘保持不變)
         // ==========================================
         
         function updateRandomQuote() {
@@ -717,16 +923,10 @@
             const allRecords = appData.records || [];
             const approved = allRecords.filter(r => r.status === '已通過');
             
-            const totalBooks = approved.length;
-            const totalReviews = approved.filter(r => (r.review && r.review.trim() !== '') || r.hasImage).length;
-            const studentsSet = new Set(approved.filter(r => r.class && r.name).map(r => String(r.class) + String(r.name)));
-            const totalStudents = studentsSet.size;
+            document.getElementById('globalTotalBooks').innerText = approved.length;
+            document.getElementById('globalTotalReviews').innerText = approved.filter(r => (r.review && r.review.trim() !== '') || r.hasImage).length;
+            document.getElementById('globalTotalStudents').innerText = new Set(approved.filter(r => r.class && r.name).map(r => String(r.class) + String(r.name))).size;
 
-            document.getElementById('globalTotalBooks').innerText = totalBooks;
-            document.getElementById('globalTotalReviews').innerText = totalReviews;
-            document.getElementById('globalTotalStudents').innerText = totalStudents;
-
-            // 年級圖表
             let chartData = [0, 0, 0, 0, 0, 0];
             approved.forEach(r => {
                 if (r.class) {
@@ -739,7 +939,6 @@
             });
             renderChart(chartData);
 
-            // 最新心得
             const reviews = [...approved].filter(r => (r.review && r.review.trim() !== '') || r.hasImage).reverse().slice(0, 8);
             const rc = document.getElementById('publicReviewsContainer');
             if (reviews.length > 0) {
@@ -754,69 +953,41 @@
                         ${r.hasImage ? `<div class="text-xs font-bold text-emerald-500 mt-2 flex items-center gap-1"><span>📷</span> 附帶圖片心得</div>` : ''}
                     </div>
                 `).join('');
-            } else {
-                rc.innerHTML = '<div class="text-center text-slate-400 py-10 font-bold">目前還沒有心得發表，趕快成為第一位吧！</div>';
-            }
+            } else rc.innerHTML = '<div class="text-center text-slate-400 py-10 font-bold">目前還沒有心得發表，趕快成為第一位吧！</div>';
 
-            // 榮譽榜
             const userCounts = {};
-            approved.forEach(r => {
-                if(!r.name || !r.class) return;
-                const key = `${r.class} ${r.name}`;
-                userCounts[key] = (userCounts[key] || 0) + 1;
-            });
-            const leaderboard = Object.entries(userCounts)
-                .map(([nameString, count]) => {
-                    const [c, n] = nameString.split(' ');
-                    return { class: c, name: n, count: count };
-                })
-                .sort((a, b) => b.count - a.count).slice(0, 9);
+            approved.forEach(r => { if(r.name && r.class) userCounts[`${r.class} ${r.name}`] = (userCounts[`${r.class} ${r.name}`] || 0) + 1; });
+            const leaderboard = Object.entries(userCounts).map(([k, count]) => ({ class: k.split(' ')[0], name: k.split(' ')[1], count })).sort((a, b) => b.count - a.count).slice(0, 9);
 
             const lc = document.getElementById('leaderboardContainer');
             if (leaderboard.length > 0) {
                 lc.innerHTML = leaderboard.map((user, index) => {
                     let badge = index === 0 ? '👑' : index + 1;
-                    let bgClass = index === 0 ? 'bg-amber-50 border-amber-200 text-amber-500' :
-                                  index === 1 ? 'bg-slate-50 border-slate-200 text-slate-400' :
-                                  index === 2 ? 'bg-orange-50 border-orange-200 text-orange-400' :
-                                  'bg-white border-slate-100 text-slate-300';
+                    let bgClass = index === 0 ? 'bg-amber-50 border-amber-200 text-amber-500' : index === 1 ? 'bg-slate-50 border-slate-200 text-slate-400' : index === 2 ? 'bg-orange-50 border-orange-200 text-orange-400' : 'bg-white border-slate-100 text-slate-300';
                     return `
                         <div class="${bgClass.split(' ')[0]} rounded-2xl p-4 flex items-center gap-4 kid-border ${bgClass.split(' ')[1]} relative">
                             ${index === 0 ? '<div class="absolute -top-3 -left-3 text-3xl">👑</div>' : ''}
                             <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center font-black text-xl ${bgClass.split(' ')[2]} shadow-sm">${badge}</div>
-                            <div class="flex-1">
-                                <div class="font-black text-lg text-slate-700">${user.class} ${user.name}</div>
-                                <div class="text-sm font-bold text-amber-600">${user.count} 本書</div>
-                            </div>
+                            <div class="flex-1"><div class="font-black text-lg text-slate-700">${user.class} ${user.name}</div><div class="text-sm font-bold text-amber-600">${user.count} 本書</div></div>
                         </div>
                     `;
                 }).join('');
-            } else {
-                lc.innerHTML = '<div class="col-span-full text-center text-slate-400 py-5 font-bold">目前還沒有通過審核的資料哦！</div>';
-            }
+            } else lc.innerHTML = '<div class="col-span-full text-center text-slate-400 py-5 font-bold">目前還沒有通過審核的資料哦！</div>';
         }
 
         function renderStudentRecords(records) {
             const tbody = document.getElementById('myRecordsTableBody');
             const noDataMsg = document.getElementById('myNoDataMsg');
-            let approvedCount = 0;
-            let pendingCount = 0;
+            let approvedCount = 0, pendingCount = 0;
 
             if (!records || records.length === 0) {
-                tbody.innerHTML = '';
-                noDataMsg.classList.remove('hidden');
+                tbody.innerHTML = ''; noDataMsg.classList.remove('hidden');
             } else {
                 noDataMsg.classList.add('hidden');
-                // 反轉陣列，讓最新資料排在最上面
-                const sortedRecords = [...records].reverse();
-                
-                tbody.innerHTML = sortedRecords.map(r => {
+                tbody.innerHTML = [...records].reverse().map(r => {
                     if (r.status === '已通過') approvedCount++;
                     if (r.status === '待審核' || r.status === '退回') pendingCount++;
-                    
-                    let statusClass = r.status === '已通過' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 
-                                      r.status === '退回' ? 'bg-rose-100 text-rose-700 border-rose-200' :
-                                      'bg-amber-100 text-amber-700 border-amber-200';
+                    let statusClass = r.status === '已通過' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : r.status === '退回' ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-amber-100 text-amber-700 border-amber-200';
                     return `
                         <tr class="bg-slate-50 transition hover:bg-sky-50">
                             <td class="p-3 md:p-4 rounded-l-2xl kid-border border-r-0 border-slate-100 text-xs md:text-sm text-slate-500">${(r.date || '').split(' ')[0]}</td>
@@ -839,17 +1010,9 @@
         }
 
         function updateLevel(count) {
-            const levels = [
-                { min: 0, name: '閱讀之卵', icon: '🥚' },
-                { min: 5, name: '閱讀幼苗', icon: '🌱' },
-                { min: 20, name: '閱讀小樹', icon: '🌳' },
-                { min: 50, name: '閱讀飛鳥', icon: '🦅' },
-                { min: 100, name: '閱讀大師', icon: '👑' }
-            ];
+            const levels = [{ min: 0, name: '閱讀之卵', icon: '🥚' }, { min: 5, name: '閱讀幼苗', icon: '🌱' }, { min: 20, name: '閱讀小樹', icon: '🌳' }, { min: 50, name: '閱讀飛鳥', icon: '🦅' }, { min: 100, name: '閱讀大師', icon: '👑' }];
             let currentLevel = levels[0];
-            for(let l of levels) {
-                if(count >= l.min) currentLevel = l;
-            }
+            for(let l of levels) if(count >= l.min) currentLevel = l;
             document.getElementById('studentLevelName').innerText = currentLevel.name;
             document.getElementById('studentLevelIcon').innerText = currentLevel.icon;
         }
@@ -862,10 +1025,7 @@
             const sortedRecords = [...records].reverse();
             const filtered = filter === 'all' ? sortedRecords : sortedRecords.filter(r => r.status === filter);
             
-            if(filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-bold">目前沒有資料</td></tr>`;
-                return;
-            }
+            if(filtered.length === 0) return tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-400 font-bold">目前沒有資料</td></tr>`;
 
             tbody.innerHTML = filtered.map(r => `
                 <tr class="hover:bg-slate-100 transition border-b border-slate-100 text-sm">
@@ -887,14 +1047,19 @@
                     <td class="p-3 whitespace-nowrap">
                         <span class="px-2 py-1 rounded text-xs font-bold ${r.status === '已通過' ? 'bg-emerald-100 text-emerald-700' : (r.status === '退回' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700')}">${r.status}</span>
                     </td>
-                    <td class="p-3 text-center whitespace-nowrap">
-                        ${r.status === '待審核' ? `
-                            <button onclick="adminAction('${r.id}', '已通過')" class="bg-emerald-400 text-white px-2 py-1 rounded text-xs font-bold hover:bg-emerald-500 shadow-sm mr-1">通過</button>
-                            <button onclick="adminAction('${r.id}', '退回')" class="bg-rose-400 text-white px-2 py-1 rounded text-xs font-bold hover:bg-rose-500 shadow-sm">退回</button>
-                        ` : `
-                            <button onclick="adminAction('${r.id}', '待審核')" class="bg-slate-200 text-slate-600 px-2 py-1 rounded text-xs font-bold hover:bg-slate-300 mr-1">重設</button>
+                    <td class="p-3 text-center whitespace-nowrap flex-col space-y-1">
+                        <div class="flex justify-center gap-1">
+                            ${r.status === '待審核' ? `
+                                <button onclick="adminAction('${r.id}', '已通過')" class="bg-emerald-400 text-white px-2 py-1 rounded text-xs font-bold hover:bg-emerald-500">通過</button>
+                                <button onclick="adminAction('${r.id}', '退回')" class="bg-rose-400 text-white px-2 py-1 rounded text-xs font-bold hover:bg-rose-500">退回</button>
+                            ` : `
+                                <button onclick="adminAction('${r.id}', '待審核')" class="bg-slate-200 text-slate-600 px-2 py-1 rounded text-xs font-bold hover:bg-slate-300">重設</button>
+                            `}
+                        </div>
+                        <div class="flex justify-center gap-1 mt-1">
+                            <button onclick="handleEditRecord('${r.id}')" class="bg-sky-100 text-sky-600 px-2 py-1 rounded text-xs font-bold hover:bg-sky-200">✏️ 編輯</button>
                             <button onclick="adminAction('${r.id}', '刪除')" class="bg-rose-100 text-rose-600 px-2 py-1 rounded text-xs font-bold hover:bg-rose-200">刪除</button>
-                        `}
+                        </div>
                     </td>
                 </tr>
             `).join('');
@@ -903,28 +1068,13 @@
         function renderChart(dataArr) {
             const ctx = document.getElementById('gradeReadingChart').getContext('2d');
             if(chartInstance) chartInstance.destroy();
-            
             chartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: ['一年級', '二年級', '三年級', '四年級', '五年級', '六年級'],
-                    datasets: [{
-                        label: '閱讀總冊數',
-                        data: dataArr,
-                        backgroundColor: ['#f87171', '#fb923c', '#fbbf24', '#34d399', '#38bdf8', '#818cf8'],
-                        borderRadius: 8,
-                        borderSkipped: false
-                    }]
+                    datasets: [{ label: '閱讀總冊數', data: dataArr, backgroundColor: ['#f87171', '#fb923c', '#fbbf24', '#34d399', '#38bdf8', '#818cf8'], borderRadius: 8 }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { dash: [4, 4] }, ticks: { precision: 0 } },
-                        x: { grid: { display: false } }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { dash: [4, 4] }, ticks: { precision: 0 } }, x: { grid: { display: false } } } }
             });
         }
     </script>
