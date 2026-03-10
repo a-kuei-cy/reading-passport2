@@ -43,7 +43,7 @@
     <!-- 🌟 頂部導覽列 -->
     <nav class="bg-white shadow-sm border-b-4 border-sky-200 sticky top-0 z-50">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center gap-3 cursor-pointer" onclick="checkAuthAndRoute()">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="logout()">
                 <div class="text-4xl animate-float">📚</div>
                 <div>
                     <h1 class="text-2xl font-black text-sky-600 tracking-wide">興嘉閱讀護照</h1>
@@ -52,12 +52,13 @@
             </div>
             <div id="navUserArea" class="hidden flex items-center gap-3">
                 <span id="navUserName" class="text-sm font-bold text-sky-700 bg-sky-100 px-4 py-1.5 rounded-full kid-border border-sky-200"></span>
-                <button onclick="logout()" class="text-sm font-bold text-rose-500 hover:text-rose-600 bg-rose-50 px-3 py-1.5 rounded-full">登出</button>
+                <button onclick="logout()" class="text-sm font-bold text-rose-500 hover:text-rose-600 bg-rose-50 px-3 py-1.5 rounded-full">登出/回首頁</button>
             </div>
         </div>
     </nav>
 
-    <main class="container mx-auto px-4 py-6 max-w-5xl">
+    <!-- 將容器加寬至 max-w-6xl 讓圖表與心得併排更好看 -->
+    <main class="container mx-auto px-4 py-6 max-w-6xl">
 
         <!-- ========================================== -->
         <!-- ⚙️ 初次設定畫面 -->
@@ -86,47 +87,117 @@
         </section>
 
         <!-- ========================================== -->
-        <!-- 🚪 登入畫面 -->
+        <!-- 🚪 前端入口處 (全校動態 + 登入) -->
         <!-- ========================================== -->
         <section id="loginView" class="view-section hidden">
-            <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mt-8">
-                <!-- 學生登入 -->
-                <div class="bg-white rounded-3xl p-8 kid-border kid-shadow border-sky-300 relative overflow-hidden">
-                    <div class="absolute -right-4 -top-4 text-7xl opacity-20 transform rotate-12">👦👧</div>
-                    <div class="text-center mb-6 relative z-10">
-                        <span class="text-6xl block mb-2 animate-float">🎒</span>
-                        <h2 class="text-3xl font-black text-sky-600">我是學生</h2>
-                        <p class="text-sky-500/80 font-bold mt-1">進入我的閱讀小宇宙</p>
-                    </div>
-                    <form id="studentLoginForm" class="space-y-4 relative z-10">
-                        <div>
-                            <input type="text" id="loginClass" required class="w-full rounded-2xl p-4 bg-sky-50 kid-border focus:border-sky-400 focus:bg-white outline-none text-lg font-bold text-center" placeholder="👉 請輸入班級 (例:101)">
-                        </div>
-                        <div>
-                            <input type="text" id="loginName" required class="w-full rounded-2xl p-4 bg-sky-50 kid-border focus:border-sky-400 focus:bg-white outline-none text-lg font-bold text-center" placeholder="👉 請輸入姓名">
-                        </div>
-                        <button type="submit" class="w-full bg-sky-400 text-white font-black text-xl py-4 rounded-2xl kid-btn border-sky-500 mt-2">
-                            🚀 出發囉！
-                        </button>
-                    </form>
+            
+            <!-- 🌍 全校動態大廳 -->
+            <div id="publicDashboard" class="mb-12">
+                <div class="text-center mb-6">
+                    <h2 class="text-3xl md:text-4xl font-black text-slate-700 flex items-center justify-center gap-3">
+                        <span class="animate-bounce">🌍</span> 興嘉閱讀動態大廳
+                    </h2>
+                    <p class="text-slate-500 font-bold mt-2 text-lg">看看大家累積了多少閱讀能量！</p>
                 </div>
 
-                <!-- 老師登入 -->
-                <div class="bg-white rounded-3xl p-8 kid-border kid-shadow border-emerald-300 relative overflow-hidden">
-                    <div class="absolute -left-4 -bottom-4 text-7xl opacity-20 transform -rotate-12">🦉</div>
-                    <div class="text-center mb-6 relative z-10">
-                        <span class="text-6xl block mb-2 animate-float" style="animation-delay: 1s;">👨‍🏫</span>
-                        <h2 class="text-3xl font-black text-emerald-600">我是老師</h2>
-                        <p class="text-emerald-500/80 font-bold mt-1">進入智慧管理中心</p>
+                <!-- 數據統計區 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+                    <div class="bg-indigo-50 rounded-3xl p-6 kid-border border-indigo-200 kid-shadow text-center relative overflow-hidden">
+                        <div class="text-5xl absolute -right-2 -bottom-2 opacity-20 transform rotate-12">📚</div>
+                        <h4 class="text-indigo-600 font-bold mb-2">全校閱讀冊數</h4>
+                        <div class="text-6xl font-black text-indigo-500" id="globalTotalBooks">0</div>
                     </div>
-                    <form id="teacherLoginForm" class="space-y-4 relative z-10">
-                        <div class="pt-4">
-                            <input type="password" id="loginPwd" required class="w-full rounded-2xl p-4 bg-emerald-50 kid-border focus:border-emerald-400 focus:bg-white outline-none text-lg font-bold text-center" placeholder="🔑 輸入管理員密碼">
+                    <div class="bg-emerald-50 rounded-3xl p-6 kid-border border-emerald-200 kid-shadow text-center relative overflow-hidden">
+                        <div class="text-5xl absolute -right-2 -bottom-2 opacity-20 transform -rotate-12">💡</div>
+                        <h4 class="text-emerald-600 font-bold mb-2">心得總篇數</h4>
+                        <div class="text-6xl font-black text-emerald-500" id="globalTotalReviews">0</div>
+                    </div>
+                    <div class="bg-sky-50 rounded-3xl p-6 kid-border border-sky-200 kid-shadow text-center relative overflow-hidden">
+                        <div class="text-5xl absolute -right-2 -bottom-2 opacity-20 transform rotate-12">🧑‍🤝‍🧑</div>
+                        <h4 class="text-sky-600 font-bold mb-2">參與學生數</h4>
+                        <div class="text-6xl font-black text-sky-500" id="globalTotalStudents">0</div>
+                    </div>
+                </div>
+
+                <!-- 圖表與心得區塊 (兩欄排版) -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- 左欄：年級閱讀量圖表 -->
+                    <div class="lg:col-span-5">
+                        <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200 h-full flex flex-col">
+                            <h3 class="text-xl font-black text-slate-700 mb-4 flex items-center gap-2"><span>📈</span> 各年級閱讀戰力表</h3>
+                            <div class="relative flex-1 w-full min-h-[300px]">
+                                <canvas id="gradeReadingChart"></canvas>
+                            </div>
                         </div>
-                        <button type="submit" class="w-full bg-emerald-400 text-emerald-900 font-black text-xl py-4 rounded-2xl kid-btn border-emerald-500 mt-6">
-                            🎯 登入後台
-                        </button>
-                    </form>
+                    </div>
+
+                    <!-- 右欄：最新精選心得 -->
+                    <div class="lg:col-span-7">
+                        <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-xl font-black text-amber-500 flex items-center gap-2"><span>✨</span> 最新精選心得</h3>
+                                <span class="text-xs font-bold bg-slate-100 text-slate-500 px-2 py-1 rounded">即時更新</span>
+                            </div>
+                            
+                            <div id="publicReviewsContainer" class="space-y-4 max-h-[400px] overflow-y-auto pr-2 no-scrollbar pb-4">
+                                <!-- 動態生成心得卡片 -->
+                            </div>
+                            
+                            <div class="text-center mt-4 pt-4 border-t-2 border-dashed border-slate-100">
+                                <button id="loadMoreReviewsBtn" onclick="loadMoreReviews()" class="bg-sky-100 text-sky-600 font-bold px-6 py-2 rounded-full kid-btn border-2 border-sky-200 hover:bg-sky-200 transition hidden">
+                                    看更多精彩心得...
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 登入卡片區塊 -->
+            <div class="relative pt-12 border-t-4 border-dashed border-sky-200 mt-10">
+                <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-sky-50 px-6 py-2 rounded-full kid-border border-sky-200 shadow-sm">
+                    <h3 class="text-xl font-black text-sky-600 flex items-center gap-2"><span>🚀</span> 準備好加入閱讀宇宙了嗎？</h3>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                    <!-- 學生登入 -->
+                    <div class="bg-white rounded-3xl p-8 kid-border kid-shadow border-sky-300 relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 text-7xl opacity-20 transform rotate-12">👦👧</div>
+                        <div class="text-center mb-6 relative z-10">
+                            <span class="text-6xl block mb-2 animate-float">🎒</span>
+                            <h2 class="text-3xl font-black text-sky-600">我是學生</h2>
+                            <p class="text-sky-500/80 font-bold mt-1">進入我的閱讀小宇宙</p>
+                        </div>
+                        <form id="studentLoginForm" class="space-y-4 relative z-10">
+                            <div>
+                                <input type="text" id="loginClass" required class="w-full rounded-2xl p-4 bg-sky-50 kid-border focus:border-sky-400 focus:bg-white outline-none text-lg font-bold text-center" placeholder="👉 請輸入班級 (例:101)">
+                            </div>
+                            <div>
+                                <input type="text" id="loginName" required class="w-full rounded-2xl p-4 bg-sky-50 kid-border focus:border-sky-400 focus:bg-white outline-none text-lg font-bold text-center" placeholder="👉 請輸入姓名">
+                            </div>
+                            <button type="submit" class="w-full bg-sky-400 text-white font-black text-xl py-4 rounded-2xl kid-btn border-sky-500 mt-2">
+                                🚀 出發囉！
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- 老師登入 -->
+                    <div class="bg-white rounded-3xl p-8 kid-border kid-shadow border-emerald-300 relative overflow-hidden">
+                        <div class="absolute -left-4 -bottom-4 text-7xl opacity-20 transform -rotate-12">🦉</div>
+                        <div class="text-center mb-6 relative z-10">
+                            <span class="text-6xl block mb-2 animate-float" style="animation-delay: 1s;">👨‍🏫</span>
+                            <h2 class="text-3xl font-black text-emerald-600">我是老師</h2>
+                            <p class="text-emerald-500/80 font-bold mt-1">進入智慧管理中心</p>
+                        </div>
+                        <form id="teacherLoginForm" class="space-y-4 relative z-10">
+                            <div class="pt-4">
+                                <input type="password" id="loginPwd" required class="w-full rounded-2xl p-4 bg-emerald-50 kid-border focus:border-emerald-400 focus:bg-white outline-none text-lg font-bold text-center" placeholder="🔑 輸入管理員密碼">
+                            </div>
+                            <button type="submit" class="w-full bg-emerald-400 text-emerald-900 font-black text-xl py-4 rounded-2xl kid-btn border-emerald-500 mt-6">
+                                🎯 登入後台
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         </section>
@@ -134,7 +205,7 @@
         <!-- ========================================== -->
         <!-- 🧑‍🎓 學生專區 -->
         <!-- ========================================== -->
-        <section id="studentView" class="view-section hidden">
+        <section id="studentView" class="view-section hidden max-w-5xl mx-auto">
             
             <!-- 💬 每日隨機閱讀金句 -->
             <div class="bg-gradient-to-r from-amber-100 to-orange-100 rounded-3xl p-5 mb-6 kid-border border-orange-200 kid-shadow relative overflow-hidden flex items-center gap-4">
@@ -167,77 +238,17 @@
                 </div>
             </div>
 
-            <!-- 學生專區頁籤 -->
-            <div class="flex overflow-x-auto no-scrollbar gap-3 mb-6 pb-2">
-                <button onclick="switchStudentTab('public')" id="tab-stu-public" class="stu-tab whitespace-nowrap px-6 py-3 rounded-2xl font-black text-lg transition kid-btn bg-amber-400 text-amber-900 border-amber-500">🌍 全校動態</button>
-                <button onclick="switchStudentTab('add')" id="tab-stu-add" class="stu-tab whitespace-nowrap px-6 py-3 rounded-2xl font-black text-lg transition kid-btn bg-white text-slate-500 kid-border hover:bg-slate-50">✍️ 新增紀錄</button>
-                <button onclick="switchStudentTab('list')" id="tab-stu-list" class="stu-tab whitespace-nowrap px-6 py-3 rounded-2xl font-black text-lg transition kid-btn bg-white text-slate-500 kid-border hover:bg-slate-50">📖 我的護照</button>
-                <button onclick="switchStudentTab('leaderboard')" id="tab-stu-leaderboard" class="stu-tab whitespace-nowrap px-6 py-3 rounded-2xl font-black text-lg transition kid-btn bg-white text-slate-500 kid-border hover:bg-slate-50">🏆 榮譽榜</button>
-            </div>
-
-            <!-- ===================================== -->
-            <!-- 內容區塊: 🌍 全校動態 (新增) -->
-            <!-- ===================================== -->
-            <div id="stu-content-public" class="stu-content">
-                
-                <!-- 數據統計區 -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-                    <div class="bg-indigo-50 rounded-3xl p-6 kid-border border-indigo-200 kid-shadow text-center relative overflow-hidden">
-                        <div class="text-5xl absolute -right-2 -bottom-2 opacity-20 transform rotate-12">📚</div>
-                        <h4 class="text-indigo-600 font-bold mb-2">全校閱讀冊數</h4>
-                        <div class="text-5xl font-black text-indigo-500" id="globalTotalBooks">0</div>
-                    </div>
-                    <div class="bg-emerald-50 rounded-3xl p-6 kid-border border-emerald-200 kid-shadow text-center relative overflow-hidden">
-                        <div class="text-5xl absolute -right-2 -bottom-2 opacity-20 transform -rotate-12">💡</div>
-                        <h4 class="text-emerald-600 font-bold mb-2">心得總篇數</h4>
-                        <div class="text-5xl font-black text-emerald-500" id="globalTotalReviews">0</div>
-                    </div>
-                    <div class="bg-sky-50 rounded-3xl p-6 kid-border border-sky-200 kid-shadow text-center relative overflow-hidden">
-                        <div class="text-5xl absolute -right-2 -bottom-2 opacity-20 transform rotate-12">🧑‍🤝‍🧑</div>
-                        <h4 class="text-sky-600 font-bold mb-2">參與學生數</h4>
-                        <div class="text-5xl font-black text-sky-500" id="globalTotalStudents">0</div>
-                    </div>
-                </div>
-
-                <!-- 圖表與心得區塊 (兩欄排版) -->
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    
-                    <!-- 左欄：年級閱讀量圖表 -->
-                    <div class="lg:col-span-5">
-                        <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200 h-full">
-                            <h3 class="text-xl font-black text-slate-700 mb-4 flex items-center gap-2"><span>📈</span> 各年級閱讀戰力表</h3>
-                            <div class="relative h-64 w-full">
-                                <canvas id="gradeReadingChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 右欄：最新精選心得 -->
-                    <div class="lg:col-span-7">
-                        <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-xl font-black text-amber-500 flex items-center gap-2"><span>✨</span> 最新精選心得</h3>
-                                <span class="text-xs font-bold bg-slate-100 text-slate-500 px-2 py-1 rounded">即時更新</span>
-                            </div>
-                            
-                            <div id="publicReviewsContainer" class="space-y-4 max-h-[500px] overflow-y-auto pr-2 no-scrollbar pb-4">
-                                <!-- 動態生成心得卡片 -->
-                            </div>
-                            
-                            <div class="text-center mt-4 pt-4 border-t-2 border-dashed border-slate-100">
-                                <button id="loadMoreReviewsBtn" onclick="loadMoreReviews()" class="bg-sky-100 text-sky-600 font-bold px-6 py-2 rounded-full kid-btn border-2 border-sky-200 hover:bg-sky-200 transition">
-                                    看更多精彩心得...
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <!-- 學生專區頁籤 (移除了全校動態) -->
+            <div class="flex overflow-x-auto no-scrollbar gap-3 mb-6 pb-2 justify-center">
+                <button onclick="switchStudentTab('add')" id="tab-stu-add" class="stu-tab whitespace-nowrap px-8 py-3 rounded-2xl font-black text-lg transition kid-btn bg-amber-400 text-amber-900 border-amber-500">✍️ 新增紀錄</button>
+                <button onclick="switchStudentTab('list')" id="tab-stu-list" class="stu-tab whitespace-nowrap px-8 py-3 rounded-2xl font-black text-lg transition kid-btn bg-white text-slate-500 kid-border hover:bg-slate-50">📖 我的護照</button>
+                <button onclick="switchStudentTab('leaderboard')" id="tab-stu-leaderboard" class="stu-tab whitespace-nowrap px-8 py-3 rounded-2xl font-black text-lg transition kid-btn bg-white text-slate-500 kid-border hover:bg-slate-50">🏆 榮譽榜</button>
             </div>
 
             <!-- ===================================== -->
             <!-- 內容區塊: 新增紀錄 -->
             <!-- ===================================== -->
-            <div id="stu-content-add" class="stu-content hidden">
+            <div id="stu-content-add" class="stu-content">
                 <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200">
                     <h3 class="text-2xl font-black mb-6 text-sky-600 flex items-center gap-2"><span>📝</span> 填寫閱讀紀錄</h3>
                     <form id="recordForm" class="space-y-5">
@@ -339,7 +350,7 @@
         <!-- ========================================== -->
         <!-- 👨‍🏫 老師管理後台 -->
         <!-- ========================================== -->
-        <section id="teacherView" class="view-section hidden">
+        <section id="teacherView" class="view-section hidden max-w-5xl mx-auto">
             <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 bg-emerald-50 p-4 rounded-3xl kid-border border-emerald-200">
                 <h2 class="text-3xl font-black text-emerald-700 flex items-center gap-3">
                     <span class="text-4xl bg-white p-2 rounded-full kid-shadow">👨‍🏫</span> 老師管理中心
@@ -472,28 +483,36 @@
             if (!appSettings.gasUrl) return showView('setupView');
             
             if (currentUser) {
+                // 已登入狀態
                 document.getElementById('navUserArea').classList.remove('hidden');
                 document.getElementById('navUserName').innerText = currentUser.role === 'teacher' ? '👨‍🏫 老師' : `👦 ${currentUser.classId} ${currentUser.name}`;
                 
                 if (currentUser.role === 'student') {
                     showView('studentView');
-                    document.getElementById('studentProfileCard').classList.remove('hidden'); // 顯示個人卡片
+                    document.getElementById('studentProfileCard').classList.remove('hidden');
                     updateStudentDashboard();
-                    switchStudentTab('public'); // 預設跳轉到全校動態
+                    switchStudentTab('add'); // 學生預設顯示新增紀錄
                 } else {
                     showView('teacherView');
                     filterRecords(currentTeacherFilter);
                 }
                 fetchData(); 
             } else {
+                // 未登入狀態：顯示前端入口處 (包含全校動態)
                 document.getElementById('navUserArea').classList.add('hidden');
                 showView('loginView');
+                fetchData(); // 就算沒登入，也要抓取全校數據來展示！
             }
         }
 
         function showView(viewId) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
             document.getElementById(viewId).classList.remove('hidden');
+            
+            // 如果顯示的是前端入口處，且圖表已經存在，需觸發重繪確保大小正確
+            if (viewId === 'loginView' && chartInstance) {
+                setTimeout(() => chartInstance.resize(), 100);
+            }
         }
 
         // --- 設定與登入邏輯 ---
@@ -506,7 +525,6 @@
             localStorage.setItem('xingjiaPassportSettings', JSON.stringify(appSettings));
             Swal.fire({ title: '設定完成！', icon: 'success', confirmButtonColor: '#38bdf8' }).then(() => {
                 checkAuthAndRoute();
-                fetchData(); 
             });
         }
 
@@ -552,13 +570,17 @@
                         allRecords.reverse(); // 最新的在前面
                         allQuotes = result.data.quotes || [];
                         
+                        // 1. 顯示隨機金句 (在學生專區)
                         displayRandomQuote(); 
                         
+                        // 2. 渲染前端入口的「全校動態大廳」 (無論是否登入都要執行)
+                        renderPublicDashboard();
+
+                        // 3. 根據身分渲染特定區域
                         if (currentUser && currentUser.role === 'student') {
                             updateStudentDashboard();
                             renderMyRecords();
                             renderLeaderboard();
-                            renderPublicDashboard(); // 渲染全校動態
                         } else if (currentUser && currentUser.role === 'teacher') {
                             renderTeacherRecords();
                             renderQuotesAdmin(); 
@@ -582,7 +604,7 @@
         }
 
         // ==========================================
-        // 🌍 全校動態邏輯 (新功能)
+        // 🌍 全校動態邏輯 (首頁前端入口)
         // ==========================================
         function renderPublicDashboard() {
             // 只篩選審核通過的紀錄
@@ -684,7 +706,7 @@
             container.innerHTML = '';
             
             if (publicApprovedRecords.length === 0) {
-                container.innerHTML = '<div class="text-center py-10 text-slate-400 font-bold">目前還沒有心得發表，趕快成為第一位吧！</div>';
+                container.innerHTML = '<div class="text-center py-12 text-slate-400 font-bold bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">目前還沒有心得發表，趕快登入成為第一位吧！</div>';
                 moreBtn.classList.add('hidden');
                 return;
             }
@@ -713,11 +735,11 @@
                 container.innerHTML += `
                     <div class="flex gap-4 items-start p-2">
                         <div class="bg-sky-100 text-sky-600 w-12 h-12 rounded-full flex items-center justify-center text-xl font-black shrink-0 border-2 border-sky-200 shadow-sm">${maskedName.charAt(0)}</div>
-                        <div class="bg-slate-50 p-4 rounded-2xl rounded-tl-none border border-slate-200 w-full relative speech-bubble">
+                        <div class="bg-slate-50 p-4 rounded-2xl rounded-tl-none border border-slate-200 w-full relative speech-bubble hover:bg-white hover:shadow-md transition">
                             <div class="flex flex-wrap items-center gap-2 mb-2">
                                 <span class="font-black text-slate-700">${r.classId} ${maskedName}</span>
                                 <span class="text-xs font-bold text-slate-400">推薦了</span>
-                                <span class="text-sm font-black text-sky-600 bg-sky-100 px-2 py-0.5 rounded-lg">《${r.bookTitle}》</span>
+                                <span class="text-sm font-black text-sky-600 bg-sky-100 px-2 py-0.5 rounded-lg border border-sky-200">《${r.bookTitle}》</span>
                             </div>
                             ${snippetHtml}
                         </div>
@@ -750,11 +772,6 @@
             
             document.querySelectorAll('.stu-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(`stu-content-${tab}`).classList.remove('hidden');
-            
-            // 當切換回全校動態時，如果圖表存在需重新調整大小避免顯示異常
-            if (tab === 'public' && chartInstance) {
-                chartInstance.resize();
-            }
         }
 
         function getLevelInfo(count) {
@@ -803,9 +820,9 @@
             } else {
                 noData.classList.add('hidden');
                 myRecords.forEach(r => {
-                    let statusHtml = r.status === 'approved' ? '<span class="text-emerald-600 bg-emerald-100 px-3 py-1.5 rounded-xl font-black text-sm">✅ 通過</span>' : 
-                                     (r.status === 'rejected' ? '<span class="text-rose-500 bg-rose-100 px-3 py-1.5 rounded-xl font-bold text-sm">❌ 退回</span>' : 
-                                     '<span class="text-amber-600 bg-amber-100 px-3 py-1.5 rounded-xl font-bold text-sm">⏳ 審核中</span>');
+                    let statusHtml = r.status === 'approved' ? '<span class="text-emerald-600 bg-emerald-100 px-3 py-1.5 rounded-xl font-black text-sm border border-emerald-200">✅ 通過</span>' : 
+                                     (r.status === 'rejected' ? '<span class="text-rose-500 bg-rose-100 px-3 py-1.5 rounded-xl font-bold text-sm border border-rose-200">❌ 退回</span>' : 
+                                     '<span class="text-amber-600 bg-amber-100 px-3 py-1.5 rounded-xl font-bold text-sm border border-amber-200">⏳ 審核中</span>');
                     
                     let reviewLink = r.reviewType === 'image' ? `<a href="${r.image}" target="_blank" class="text-sky-500 hover:text-sky-600 font-bold bg-sky-50 px-2 py-1 rounded">📸 看照片</a>` : `<span class="text-slate-400 font-bold bg-slate-50 px-2 py-1 rounded">⌨️ 文字心得</span>`;
 
@@ -839,14 +856,14 @@
             const sorted = Object.values(stats).sort((a, b) => b.count - a.count).slice(0, 20);
 
             if(sorted.length === 0) {
-                container.innerHTML = '<div class="col-span-full text-center py-10 text-slate-400 font-bold">目前還沒有人上榜，趕快搶第一名！</div>';
+                container.innerHTML = '<div class="col-span-full text-center py-10 text-slate-400 font-bold bg-slate-50 rounded-2xl">目前還沒有人上榜，趕快搶第一名！</div>';
                 return;
             }
 
             sorted.forEach((student, index) => {
                 const lvl = getLevelInfo(student.count);
                 let medal = index === 0 ? '👑' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : '🌟'));
-                let bgClass = index === 0 ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-100';
+                let bgClass = index === 0 ? 'bg-amber-50 border-amber-300 shadow-md' : 'bg-white border-slate-200';
                 
                 // 姓名遮蔽
                 let maskedName = student.name;
@@ -854,13 +871,13 @@
                 else if(maskedName.length >= 3) maskedName = maskedName.charAt(0) + 'Ｏ' + maskedName.substring(2);
 
                 container.innerHTML += `
-                    <div class="${bgClass} kid-border kid-shadow rounded-3xl p-4 flex items-center gap-4">
+                    <div class="${bgClass} kid-border kid-shadow rounded-3xl p-4 flex items-center gap-4 hover:-translate-y-1 transition duration-300">
                         <div class="text-4xl w-10 text-center">${medal}</div>
                         <div class="flex-1">
                             <div class="font-black text-lg text-slate-700">${student.classId} <span class="text-sky-600">${maskedName}</span></div>
                             <div class="text-sm font-bold text-slate-500 mt-1 flex items-center gap-1"><span>${lvl.icon}</span> ${lvl.name}</div>
                         </div>
-                        <div class="text-3xl font-black text-sky-500 bg-sky-50 w-14 h-14 rounded-2xl flex items-center justify-center">${student.count}</div>
+                        <div class="text-3xl font-black text-sky-500 bg-sky-50 w-14 h-14 rounded-2xl flex items-center justify-center border-2 border-sky-100">${student.count}</div>
                     </div>
                 `;
             });
@@ -1084,7 +1101,7 @@
 
             allQuotes.forEach(q => {
                 container.innerHTML += `
-                    <div class="bg-amber-50 rounded-2xl p-5 kid-border border-amber-200 relative group">
+                    <div class="bg-amber-50 rounded-2xl p-5 kid-border border-amber-200 relative group hover:bg-amber-100 transition">
                         <div class="text-3xl absolute -top-3 -left-3 opacity-50">✨</div>
                         <p class="font-bold text-slate-700 text-lg pr-12">${q.text}</p>
                         <div class="mt-4 flex justify-end gap-2 border-t border-amber-200 pt-3">
