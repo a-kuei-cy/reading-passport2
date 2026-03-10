@@ -87,7 +87,7 @@
         </section>
 
         <!-- ========================================== -->
-        <!-- 🚪 前端入口處 (全校動態 + 登入) -->
+        <!-- 🚪 前端入口處 (全校動態 + 榮譽榜 + 登入) -->
         <!-- ========================================== -->
         <section id="loginView" class="view-section hidden">
             
@@ -120,7 +120,7 @@
                 </div>
 
                 <!-- 圖表與心得區塊 (兩欄排版) -->
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
                     <!-- 左欄：年級閱讀量圖表 -->
                     <div class="lg:col-span-5">
                         <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200 h-full flex flex-col">
@@ -133,13 +133,13 @@
 
                     <!-- 右欄：最新精選心得 -->
                     <div class="lg:col-span-7">
-                        <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200">
+                        <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200 h-full flex flex-col">
                             <div class="flex justify-between items-center mb-4">
                                 <h3 class="text-xl font-black text-amber-500 flex items-center gap-2"><span>✨</span> 最新精選心得</h3>
                                 <span class="text-xs font-bold bg-slate-100 text-slate-500 px-2 py-1 rounded">即時更新</span>
                             </div>
                             
-                            <div id="publicReviewsContainer" class="space-y-4 max-h-[400px] overflow-y-auto pr-2 no-scrollbar pb-4">
+                            <div id="publicReviewsContainer" class="space-y-4 flex-1 overflow-y-auto pr-2 no-scrollbar pb-4 max-h-[400px]">
                                 <!-- 動態生成心得卡片 -->
                             </div>
                             
@@ -149,6 +149,19 @@
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- 🏆 閱讀達人榮譽榜 (移至首頁) -->
+                <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-amber-200">
+                    <div class="text-center mb-8">
+                        <h3 class="text-3xl font-black text-amber-500 flex items-center justify-center gap-2">
+                            <span class="animate-bounce">🏆</span> 閱讀達人榮譽榜
+                        </h3>
+                        <p class="text-slate-400 font-bold mt-2">全校最棒的閱讀小夥伴 (前20名)</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="leaderboardContainer">
+                        <!-- 動態生成 -->
                     </div>
                 </div>
             </div>
@@ -238,11 +251,10 @@
                 </div>
             </div>
 
-            <!-- 學生專區頁籤 (移除了全校動態) -->
+            <!-- 學生專區頁籤 (僅剩新增與歷程) -->
             <div class="flex overflow-x-auto no-scrollbar gap-3 mb-6 pb-2 justify-center">
                 <button onclick="switchStudentTab('add')" id="tab-stu-add" class="stu-tab whitespace-nowrap px-8 py-3 rounded-2xl font-black text-lg transition kid-btn bg-amber-400 text-amber-900 border-amber-500">✍️ 新增紀錄</button>
                 <button onclick="switchStudentTab('list')" id="tab-stu-list" class="stu-tab whitespace-nowrap px-8 py-3 rounded-2xl font-black text-lg transition kid-btn bg-white text-slate-500 kid-border hover:bg-slate-50">📖 我的護照</button>
-                <button onclick="switchStudentTab('leaderboard')" id="tab-stu-leaderboard" class="stu-tab whitespace-nowrap px-8 py-3 rounded-2xl font-black text-lg transition kid-btn bg-white text-slate-500 kid-border hover:bg-slate-50">🏆 榮譽榜</button>
             </div>
 
             <!-- ===================================== -->
@@ -329,19 +341,6 @@
                             <span class="text-6xl block mb-4 grayscale opacity-50">📭</span>
                             <p class="text-slate-400 font-bold text-lg">護照還是空的，快去讀第一本書吧！</p>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 內容區塊: 榮譽榜 -->
-            <div id="stu-content-leaderboard" class="stu-content hidden">
-                <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200">
-                    <div class="text-center mb-8">
-                        <h3 class="text-3xl font-black text-amber-500 flex items-center justify-center gap-2"><span>🏆</span> 閱讀達人榮譽榜</h3>
-                        <p class="text-slate-400 font-bold mt-2">全校最棒的閱讀小夥伴 (前20名)</p>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="leaderboardContainer">
-                        <!-- 動態生成 -->
                     </div>
                 </div>
             </div>
@@ -498,7 +497,7 @@
                 }
                 fetchData(); 
             } else {
-                // 未登入狀態：顯示前端入口處 (包含全校動態)
+                // 未登入狀態：顯示前端入口處 (包含全校動態與榮譽榜)
                 document.getElementById('navUserArea').classList.add('hidden');
                 showView('loginView');
                 fetchData(); // 就算沒登入，也要抓取全校數據來展示！
@@ -573,14 +572,14 @@
                         // 1. 顯示隨機金句 (在學生專區)
                         displayRandomQuote(); 
                         
-                        // 2. 渲染前端入口的「全校動態大廳」 (無論是否登入都要執行)
+                        // 2. 渲染前端入口的「全校動態大廳」與「榮譽榜」 (無論是否登入都要執行)
                         renderPublicDashboard();
+                        renderLeaderboard();
 
                         // 3. 根據身分渲染特定區域
                         if (currentUser && currentUser.role === 'student') {
                             updateStudentDashboard();
                             renderMyRecords();
-                            renderLeaderboard();
                         } else if (currentUser && currentUser.role === 'teacher') {
                             renderTeacherRecords();
                             renderQuotesAdmin(); 
@@ -760,6 +759,58 @@
             renderReviewsList();
         }
 
+        // ==========================================
+        // 🏆 閱讀達人榮譽榜邏輯 (首頁前端入口)
+        // ==========================================
+        function renderLeaderboard() {
+            const container = document.getElementById('leaderboardContainer');
+            container.innerHTML = '';
+            
+            const stats = {};
+            // 直接使用已過濾出審核通過的 publicApprovedRecords
+            publicApprovedRecords.forEach(r => {
+                const key = `${r.classId}-${r.name}`;
+                if(!stats[key]) stats[key] = { classId: r.classId, name: r.name, count: 0 };
+                stats[key].count++;
+            });
+
+            const sorted = Object.values(stats).sort((a, b) => b.count - a.count).slice(0, 20);
+
+            if(sorted.length === 0) {
+                container.innerHTML = '<div class="col-span-full text-center py-10 text-slate-400 font-bold bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">目前還沒有人上榜，趕快搶第一名！</div>';
+                return;
+            }
+
+            sorted.forEach((student, index) => {
+                const lvl = getLevelInfo(student.count);
+                let medal = index === 0 ? '👑' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : '🌟'));
+                let bgClass = index === 0 ? 'bg-amber-50 border-amber-300 shadow-md transform scale-105' : 'bg-white border-slate-200';
+                
+                // 姓名遮蔽
+                let maskedName = student.name;
+                if(maskedName.length === 2) maskedName = maskedName.charAt(0) + 'Ｏ';
+                else if(maskedName.length >= 3) maskedName = maskedName.charAt(0) + 'Ｏ' + maskedName.substring(2);
+
+                container.innerHTML += `
+                    <div class="${bgClass} kid-border kid-shadow rounded-3xl p-4 flex items-center gap-4 hover:-translate-y-1 transition duration-300">
+                        <div class="text-4xl w-10 text-center">${medal}</div>
+                        <div class="flex-1">
+                            <div class="font-black text-lg text-slate-700">${student.classId} <span class="text-sky-600">${maskedName}</span></div>
+                            <div class="text-sm font-bold text-slate-500 mt-1 flex items-center gap-1"><span>${lvl.icon}</span> ${lvl.name}</div>
+                        </div>
+                        <div class="text-3xl font-black text-sky-500 bg-sky-50 w-14 h-14 rounded-2xl flex items-center justify-center border-2 border-sky-100">${student.count}</div>
+                    </div>
+                `;
+            });
+        }
+
+        function getLevelInfo(count) {
+            if (count < 5) return { name: '閱讀之卵', icon: '🥚', next: 5, color: 'text-sky-500', bg: 'bg-sky-50' };
+            if (count < 15) return { name: '求知毛蟲', icon: '🐛', next: 15, color: 'text-emerald-500', bg: 'bg-emerald-50' };
+            if (count < 30) return { name: '沉思之蛹', icon: '🪹', next: 30, color: 'text-amber-600', bg: 'bg-amber-50' };
+            return { name: '智慧蝴蝶', icon: '🦋', next: 999, color: 'text-rose-500', bg: 'bg-rose-50' };
+        }
+
         // --- 🧑‍🎓 學生專區其他邏輯 ---
         function switchStudentTab(tab) {
             document.querySelectorAll('.stu-tab').forEach(el => {
@@ -772,13 +823,6 @@
             
             document.querySelectorAll('.stu-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(`stu-content-${tab}`).classList.remove('hidden');
-        }
-
-        function getLevelInfo(count) {
-            if (count < 5) return { name: '閱讀之卵', icon: '🥚', next: 5, color: 'text-sky-500', bg: 'bg-sky-50' };
-            if (count < 15) return { name: '求知毛蟲', icon: '🐛', next: 15, color: 'text-emerald-500', bg: 'bg-emerald-50' };
-            if (count < 30) return { name: '沉思之蛹', icon: '🪹', next: 30, color: 'text-amber-600', bg: 'bg-amber-50' };
-            return { name: '智慧蝴蝶', icon: '🦋', next: 999, color: 'text-rose-500', bg: 'bg-rose-50' };
         }
 
         function updateStudentDashboard() {
@@ -838,49 +882,6 @@
                     `;
                 });
             }
-        }
-
-        function renderLeaderboard() {
-            const container = document.getElementById('leaderboardContainer');
-            container.innerHTML = '';
-            
-            const stats = {};
-            allRecords.forEach(r => {
-                if(r.status === 'approved') {
-                    const key = `${r.classId}-${r.name}`;
-                    if(!stats[key]) stats[key] = { classId: r.classId, name: r.name, count: 0 };
-                    stats[key].count++;
-                }
-            });
-
-            const sorted = Object.values(stats).sort((a, b) => b.count - a.count).slice(0, 20);
-
-            if(sorted.length === 0) {
-                container.innerHTML = '<div class="col-span-full text-center py-10 text-slate-400 font-bold bg-slate-50 rounded-2xl">目前還沒有人上榜，趕快搶第一名！</div>';
-                return;
-            }
-
-            sorted.forEach((student, index) => {
-                const lvl = getLevelInfo(student.count);
-                let medal = index === 0 ? '👑' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : '🌟'));
-                let bgClass = index === 0 ? 'bg-amber-50 border-amber-300 shadow-md' : 'bg-white border-slate-200';
-                
-                // 姓名遮蔽
-                let maskedName = student.name;
-                if(maskedName.length === 2) maskedName = maskedName.charAt(0) + 'Ｏ';
-                else if(maskedName.length >= 3) maskedName = maskedName.charAt(0) + 'Ｏ' + maskedName.substring(2);
-
-                container.innerHTML += `
-                    <div class="${bgClass} kid-border kid-shadow rounded-3xl p-4 flex items-center gap-4 hover:-translate-y-1 transition duration-300">
-                        <div class="text-4xl w-10 text-center">${medal}</div>
-                        <div class="flex-1">
-                            <div class="font-black text-lg text-slate-700">${student.classId} <span class="text-sky-600">${maskedName}</span></div>
-                            <div class="text-sm font-bold text-slate-500 mt-1 flex items-center gap-1"><span>${lvl.icon}</span> ${lvl.name}</div>
-                        </div>
-                        <div class="text-3xl font-black text-sky-500 bg-sky-50 w-14 h-14 rounded-2xl flex items-center justify-center border-2 border-sky-100">${student.count}</div>
-                    </div>
-                `;
-            });
         }
 
         // --- 圖片上傳與表單處理 ---
