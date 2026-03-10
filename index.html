@@ -3,520 +3,980 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📚 線上閱讀護照</title>
-    <!-- 使用 Tailwind CSS 加速排版 -->
+    <title>🌟 興嘉閱讀護照 Xingjia Reading Passport</title>
+    <!-- 使用 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 使用 SweetAlert2 製作美觀的彈出視窗 -->
+    <!-- 使用 SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        /* 隱藏/顯示的輔助類別 */
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        
+        body { font-family: 'Nunito', 'Noto Sans TC', sans-serif; }
         .hidden { display: none !important; }
-        /* 載入動畫 */
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* 童趣風格樣式 */
+        .kid-shadow { box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1); }
+        .kid-border { border: 3px solid #cbd5e1; }
+        .kid-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 3px solid transparent; }
+        .kid-btn:hover { transform: translateY(-3px) scale(1.02); box-shadow: 4px 6px 0px rgba(0, 0, 0, 0.15); }
+        .kid-btn:active { transform: translateY(0); box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.1); }
+        
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #fbbf24; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0px); } }
+        .animate-float { animation: float 3s ease-in-out infinite; }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen text-gray-800">
+<body class="bg-sky-50 min-h-screen text-slate-700">
 
-    <script>
-        // ==========================================
-        // 🔴 請在這裡填入您的 Google Apps Script 部署網址
-        // ==========================================
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbyU4Ljogie6v0WdGG_UEul-gRbS1_U-rIFIWbn717DYU4QMdO8ti40QQ9DU2BRsddhJ/exec"; 
-    </script>
-
-    <!-- 頂部導覽列 -->
-    <nav class="bg-blue-600 text-white shadow-md">
+    <!-- 🌟 頂部導覽列 -->
+    <nav class="bg-white shadow-sm border-b-4 border-sky-200 sticky top-0 z-50">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <h1 class="text-xl font-bold flex items-center gap-2">
-                <span>📚</span> 線上閱讀護照
-            </h1>
-            <div class="flex gap-2">
-                <button onclick="switchView('student')" class="nav-btn bg-blue-700 hover:bg-blue-800 px-3 py-1 rounded transition">學生打卡</button>
-                <button onclick="switchView('teacher')" class="nav-btn hover:bg-blue-800 px-3 py-1 rounded transition">老師後台</button>
+            <div class="flex items-center gap-3 cursor-pointer" onclick="checkAuthAndRoute()">
+                <div class="text-4xl animate-float">📚</div>
+                <div>
+                    <h1 class="text-2xl font-black text-sky-600 tracking-wide">興嘉閱讀護照</h1>
+                    <p class="text-xs font-bold text-amber-500 uppercase tracking-wider">Xingjia Reading Passport</p>
+                </div>
+            </div>
+            <div id="navUserArea" class="hidden flex items-center gap-3">
+                <span id="navUserName" class="text-sm font-bold text-sky-700 bg-sky-100 px-4 py-1.5 rounded-full kid-border border-sky-200"></span>
+                <button onclick="logout()" class="text-sm font-bold text-rose-500 hover:text-rose-600 bg-rose-50 px-3 py-1.5 rounded-full">登出</button>
             </div>
         </div>
     </nav>
 
-    <!-- 主要內容區塊 -->
-    <main class="container mx-auto px-4 py-8 max-w-4xl">
+    <main class="container mx-auto px-4 py-6 max-w-5xl">
 
         <!-- ========================================== -->
-        <!-- 🧑‍🎓 學生打卡視圖 -->
+        <!-- ⚙️ 初次設定畫面 -->
         <!-- ========================================== -->
-        <section id="studentView" class="view-section">
-            
-            <!-- 隨機金句顯示區 -->
-            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8 rounded shadow-sm">
-                <p class="text-gray-700 italic flex items-start gap-2">
-                    <span class="text-yellow-500 text-xl">💡</span>
-                    <span id="quoteDisplay">載入金句中...</span>
-                </p>
-            </div>
-
-            <!-- 打卡表單 -->
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <h2 class="text-2xl font-bold mb-6 text-center text-blue-800 border-b pb-3">新增閱讀紀錄</h2>
-                
-                <form id="recordForm" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">班級 (必填)</label>
-                            <input type="text" id="classId" required class="w-full border rounded p-2 focus:ring focus:ring-blue-200 outline-none" placeholder="例如：101">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">姓名 (必填)</label>
-                            <input type="text" id="name" required class="w-full border rounded p-2 focus:ring focus:ring-blue-200 outline-none" placeholder="例如：王小明">
-                        </div>
-                    </div>
-
+        <section id="setupView" class="view-section hidden max-w-md mx-auto mt-10">
+            <div class="bg-white rounded-3xl p-8 kid-border kid-shadow border-amber-300">
+                <div class="text-center mb-6">
+                    <span class="text-5xl mb-3 block animate-bounce">🛠️</span>
+                    <h2 class="text-2xl font-black text-amber-600">系統連接設定</h2>
+                    <p class="text-slate-500 text-sm mt-2 font-bold">請填寫後端網址才能開始魔法旅程！</p>
+                </div>
+                <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">書名 (必填)</label>
-                        <input type="text" id="bookTitle" required class="w-full border rounded p-2 focus:ring focus:ring-blue-200 outline-none">
+                        <label class="block text-sm font-bold text-slate-700 mb-1">Google Apps Script 網址</label>
+                        <input type="text" id="setupGasUrl" class="w-full rounded-2xl p-3 bg-slate-50 kid-border focus:border-amber-400 focus:bg-white outline-none" placeholder="https://script.google.com/macros/s/...">
                     </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">作者</label>
-                            <input type="text" id="author" class="w-full border rounded p-2 focus:ring focus:ring-blue-200 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">出版社</label>
-                            <input type="text" id="publisher" class="w-full border rounded p-2 focus:ring focus:ring-blue-200 outline-none">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">閱讀頁數</label>
-                            <input type="number" id="pages" class="w-full border rounded p-2 focus:ring focus:ring-blue-200 outline-none" min="1">
-                        </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">管理員通關密碼</label>
+                        <input type="password" id="setupPwd" class="w-full rounded-2xl p-3 bg-slate-50 kid-border focus:border-amber-400 focus:bg-white outline-none" placeholder="預設為 admin" value="admin">
                     </div>
-
-                    <!-- 心得類型選擇 -->
-                    <div class="pt-4 border-t mt-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">請選擇心得繳交方式 (擇一)</label>
-                        <div class="flex gap-4">
-                            <label class="flex items-center gap-2 cursor-pointer p-3 border rounded w-1/2 hover:bg-gray-50 transition">
-                                <input type="radio" name="reviewType" value="text" checked onchange="toggleReviewInput()" class="text-blue-600 focus:ring-blue-500">
-                                <span>📝 文字心得</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer p-3 border rounded w-1/2 hover:bg-gray-50 transition">
-                                <input type="radio" name="reviewType" value="image" onchange="toggleReviewInput()" class="text-blue-600 focus:ring-blue-500">
-                                <span>📸 上傳圖片</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- 📝 文字輸入區 -->
-                    <div id="textInputArea" class="mt-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">心得內容</label>
-                        <textarea id="reviewText" rows="4" class="w-full border rounded p-2 focus:ring focus:ring-blue-200 outline-none" placeholder="請寫下這本書的讀後心得..."></textarea>
-                    </div>
-
-                    <!-- 📸 圖片上傳區 -->
-                    <div id="imageInputArea" class="mt-4 hidden bg-gray-50 p-4 rounded border border-dashed border-gray-300">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">上傳手寫心得/學習單照片</label>
-                        <input type="file" id="reviewImage" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" onchange="previewImage(event)">
-                        
-                        <!-- 預覽圖片容器 -->
-                        <div id="imagePreviewContainer" class="mt-4 hidden">
-                            <p class="text-xs text-gray-500 mb-1">圖片預覽：</p>
-                            <img id="imagePreview" src="" alt="預覽圖片" class="max-h-48 rounded border shadow-sm">
-                        </div>
-                    </div>
-
-                    <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition mt-6 flex justify-center items-center gap-2">
-                        <span>送出紀錄</span>
+                    <button onclick="saveInitialSettings()" class="w-full bg-amber-400 text-amber-900 font-black text-lg py-3 rounded-2xl kid-btn border-amber-500 mt-4">
+                        ✨ 儲存並開始
                     </button>
-                </form>
+                </div>
             </div>
         </section>
 
+        <!-- ========================================== -->
+        <!-- 🚪 登入畫面 -->
+        <!-- ========================================== -->
+        <section id="loginView" class="view-section hidden">
+            <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mt-8">
+                <!-- 學生登入 -->
+                <div class="bg-white rounded-3xl p-8 kid-border kid-shadow border-sky-300 relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 text-7xl opacity-20 transform rotate-12">👦👧</div>
+                    <div class="text-center mb-6 relative z-10">
+                        <span class="text-6xl block mb-2 animate-float">🎒</span>
+                        <h2 class="text-3xl font-black text-sky-600">我是學生</h2>
+                        <p class="text-sky-500/80 font-bold mt-1">進入我的閱讀小宇宙</p>
+                    </div>
+                    <form id="studentLoginForm" class="space-y-4 relative z-10">
+                        <div>
+                            <input type="text" id="loginClass" required class="w-full rounded-2xl p-4 bg-sky-50 kid-border focus:border-sky-400 focus:bg-white outline-none text-lg font-bold text-center" placeholder="👉 請輸入班級 (例:101)">
+                        </div>
+                        <div>
+                            <input type="text" id="loginName" required class="w-full rounded-2xl p-4 bg-sky-50 kid-border focus:border-sky-400 focus:bg-white outline-none text-lg font-bold text-center" placeholder="👉 請輸入姓名">
+                        </div>
+                        <button type="submit" class="w-full bg-sky-400 text-white font-black text-xl py-4 rounded-2xl kid-btn border-sky-500 mt-2">
+                            🚀 出發囉！
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 老師登入 -->
+                <div class="bg-white rounded-3xl p-8 kid-border kid-shadow border-emerald-300 relative overflow-hidden">
+                    <div class="absolute -left-4 -bottom-4 text-7xl opacity-20 transform -rotate-12">🦉</div>
+                    <div class="text-center mb-6 relative z-10">
+                        <span class="text-6xl block mb-2 animate-float" style="animation-delay: 1s;">👨‍🏫</span>
+                        <h2 class="text-3xl font-black text-emerald-600">我是老師</h2>
+                        <p class="text-emerald-500/80 font-bold mt-1">進入智慧管理中心</p>
+                    </div>
+                    <form id="teacherLoginForm" class="space-y-4 relative z-10">
+                        <div class="pt-4">
+                            <input type="password" id="loginPwd" required class="w-full rounded-2xl p-4 bg-emerald-50 kid-border focus:border-emerald-400 focus:bg-white outline-none text-lg font-bold text-center" placeholder="🔑 輸入管理員密碼">
+                        </div>
+                        <button type="submit" class="w-full bg-emerald-400 text-emerald-900 font-black text-xl py-4 rounded-2xl kid-btn border-emerald-500 mt-6">
+                            🎯 登入後台
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
 
         <!-- ========================================== -->
-        <!-- 👨‍🏫 老師後台視圖 -->
+        <!-- 🧑‍🎓 學生專區 -->
+        <!-- ========================================== -->
+        <section id="studentView" class="view-section hidden">
+            
+            <!-- 💬 每日隨機閱讀金句 -->
+            <div class="bg-gradient-to-r from-amber-100 to-orange-100 rounded-3xl p-5 mb-6 kid-border border-orange-200 kid-shadow relative overflow-hidden flex items-center gap-4">
+                <div class="text-5xl animate-bounce">💡</div>
+                <div class="flex-1">
+                    <p class="text-xs font-black text-orange-400 mb-1 uppercase tracking-widest">每日閱讀金句 / Daily Quote</p>
+                    <p id="randomQuoteText" class="text-lg md:text-xl font-bold text-orange-800">載入金句中，請稍候...</p>
+                </div>
+            </div>
+
+            <!-- 個人狀態卡片 -->
+            <div class="bg-white rounded-3xl p-6 mb-6 kid-border kid-shadow border-sky-300 flex flex-col md:flex-row items-center justify-between">
+                <div class="flex items-center gap-6 mb-4 md:mb-0">
+                    <div id="studentLevelIcon" class="text-7xl bg-sky-100 w-28 h-28 rounded-full flex items-center justify-center kid-border border-sky-200">🥚</div>
+                    <div>
+                        <h2 class="text-3xl font-black text-slate-700 mb-1"><span id="studentDisplayClass"></span> <span id="studentDisplayName"></span></h2>
+                        <p class="font-bold text-slate-500">目前階段：<span id="studentLevelName" class="font-black text-sky-500 text-xl bg-sky-50 px-2 py-1 rounded-lg">閱讀之卵</span></p>
+                        <p class="text-sm font-bold text-amber-500 mt-2 bg-amber-50 inline-block px-3 py-1 rounded-full border border-amber-200" id="studentNextLevelHint">再讀 5 本書即可進化！</p>
+                    </div>
+                </div>
+                <div class="flex gap-3 text-center w-full md:w-auto">
+                    <div class="flex-1 md:flex-none bg-emerald-50 px-5 py-4 rounded-2xl kid-border border-emerald-200">
+                        <div class="text-sm font-bold text-emerald-600 mb-1">已通過</div>
+                        <div class="text-4xl font-black text-emerald-500" id="studentApprovedCount">0</div>
+                    </div>
+                    <div class="flex-1 md:flex-none bg-amber-50 px-5 py-4 rounded-2xl kid-border border-amber-200">
+                        <div class="text-sm font-bold text-amber-600 mb-1">審核中</div>
+                        <div class="text-4xl font-black text-amber-500" id="studentPendingCount">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 學生專區頁籤 -->
+            <div class="flex overflow-x-auto no-scrollbar gap-3 mb-6">
+                <button onclick="switchStudentTab('add')" id="tab-stu-add" class="stu-tab whitespace-nowrap px-6 py-3 rounded-2xl font-black text-lg transition kid-btn bg-amber-400 text-amber-900 border-amber-500">✍️ 新增紀錄</button>
+                <button onclick="switchStudentTab('list')" id="tab-stu-list" class="stu-tab whitespace-nowrap px-6 py-3 rounded-2xl font-black text-lg transition kid-btn bg-white text-slate-500 kid-border hover:bg-slate-50">📖 我的護照</button>
+                <button onclick="switchStudentTab('leaderboard')" id="tab-stu-leaderboard" class="stu-tab whitespace-nowrap px-6 py-3 rounded-2xl font-black text-lg transition kid-btn bg-white text-slate-500 kid-border hover:bg-slate-50">🏆 榮譽榜</button>
+            </div>
+
+            <!-- 內容區塊: 新增紀錄 -->
+            <div id="stu-content-add" class="stu-content">
+                <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200">
+                    <h3 class="text-2xl font-black mb-6 text-sky-600 flex items-center gap-2"><span>📝</span> 填寫閱讀紀錄</h3>
+                    <form id="recordForm" class="space-y-5">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-bold text-slate-600 mb-2">📖 書名 (必填)</label>
+                                <input type="text" id="bookTitle" required class="w-full rounded-2xl p-3 bg-slate-50 kid-border focus:border-sky-400 focus:bg-white outline-none font-bold">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-600 mb-2">👤 作者</label>
+                                    <input type="text" id="author" class="w-full rounded-2xl p-3 bg-slate-50 kid-border focus:border-sky-400 focus:bg-white outline-none font-bold">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-bold text-slate-600 mb-2">🏢 出版社</label>
+                                    <input type="text" id="publisher" class="w-full rounded-2xl p-3 bg-slate-50 kid-border focus:border-sky-400 focus:bg-white outline-none font-bold">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t-2 border-dashed border-slate-200">
+                            <label class="block text-sm font-bold text-slate-600 mb-3">請選擇繳交方式 (擇一)</label>
+                            <div class="flex flex-col md:flex-row gap-4">
+                                <label class="flex-1 flex items-center justify-center gap-3 cursor-pointer p-4 rounded-2xl transition kid-border bg-sky-50 border-sky-400 text-sky-700" id="label-type-text">
+                                    <input type="radio" name="reviewType" value="text" checked onchange="toggleReviewInput()" class="hidden">
+                                    <span class="text-2xl">⌨️</span> <span class="font-black text-lg">鍵盤打字</span>
+                                </label>
+                                <label class="flex-1 flex items-center justify-center gap-3 cursor-pointer p-4 rounded-2xl transition kid-border bg-white text-slate-500 hover:bg-slate-50" id="label-type-image">
+                                    <input type="radio" name="reviewType" value="image" onchange="toggleReviewInput()" class="hidden">
+                                    <span class="text-2xl">📸</span> <span class="font-black text-lg">拍照上傳</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 📝 文字輸入區 -->
+                        <div id="textInputArea" class="mt-4">
+                            <textarea id="reviewText" rows="5" class="w-full rounded-2xl p-4 bg-slate-50 kid-border focus:border-sky-400 focus:bg-white outline-none resize-none font-bold text-slate-700 leading-relaxed" placeholder="請寫下這本書的心得..."></textarea>
+                        </div>
+
+                        <!-- 📸 圖片上傳區 -->
+                        <div id="imageInputArea" class="mt-4 hidden bg-indigo-50 p-8 rounded-3xl border-4 border-dashed border-indigo-200 text-center">
+                            <span class="text-5xl block mb-3 animate-bounce">📷</span>
+                            <label class="block text-base font-bold text-indigo-700 mb-4">點擊下方按鈕，選擇你的學習單照片！</label>
+                            <input type="file" id="reviewImage" accept="image/*" class="block w-full max-w-xs mx-auto text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer" onchange="previewImage(event)">
+                            <div id="imagePreviewContainer" class="mt-6 hidden">
+                                <img id="imagePreview" src="" alt="預覽圖片" class="max-h-64 mx-auto rounded-2xl kid-shadow kid-border border-indigo-300">
+                            </div>
+                        </div>
+
+                        <button type="submit" id="submitBtn" class="w-full bg-sky-400 text-white font-black text-xl py-4 rounded-2xl kid-btn border-sky-500 mt-6 flex justify-center items-center gap-2">
+                            <span>🚀 魔法送出！</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 內容區塊: 我的護照 -->
+            <div id="stu-content-list" class="stu-content hidden">
+                <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-black text-sky-600 flex items-center gap-2"><span>📖</span> 閱讀歷程</h3>
+                        <button onclick="fetchData()" class="text-sm font-bold text-sky-500 hover:text-sky-600 bg-sky-50 px-3 py-1.5 rounded-lg">🔄 整理背包</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-left border-separate border-spacing-y-3">
+                            <thead>
+                                <tr class="text-slate-400 text-sm">
+                                    <th class="px-4 font-bold">紀錄日期</th>
+                                    <th class="px-4 font-bold">書籍名稱</th>
+                                    <th class="px-4 font-bold text-center">狀態</th>
+                                </tr>
+                            </thead>
+                            <tbody id="myRecordsTableBody">
+                                <!-- 動態生成 -->
+                            </tbody>
+                        </table>
+                        <div id="myNoDataMsg" class="text-center py-12 hidden">
+                            <span class="text-6xl block mb-4 grayscale opacity-50">📭</span>
+                            <p class="text-slate-400 font-bold text-lg">護照還是空的，快去讀第一本書吧！</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 內容區塊: 榮譽榜 -->
+            <div id="stu-content-leaderboard" class="stu-content hidden">
+                <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200">
+                    <div class="text-center mb-8">
+                        <h3 class="text-3xl font-black text-amber-500 flex items-center justify-center gap-2"><span>🏆</span> 閱讀達人榮譽榜</h3>
+                        <p class="text-slate-400 font-bold mt-2">全校最棒的閱讀小夥伴 (前20名)</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="leaderboardContainer">
+                        <!-- 動態生成 -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 👨‍🏫 老師管理後台 -->
         <!-- ========================================== -->
         <section id="teacherView" class="view-section hidden">
-            <div class="bg-white rounded-lg shadow-md p-6">
-                <div class="flex justify-between items-center mb-6 border-b pb-3">
-                    <h2 class="text-2xl font-bold text-blue-800">審核與管理後台</h2>
-                    <button onclick="fetchData()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm transition flex items-center gap-1">
-                        <span>🔄</span> 重新整理
-                    </button>
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 bg-emerald-50 p-4 rounded-3xl kid-border border-emerald-200">
+                <h2 class="text-3xl font-black text-emerald-700 flex items-center gap-3">
+                    <span class="text-4xl bg-white p-2 rounded-full kid-shadow">👨‍🏫</span> 老師管理中心
+                </h2>
+                <div class="flex gap-2 w-full md:w-auto">
+                    <button onclick="fetchData()" class="flex-1 md:flex-none bg-white font-bold text-slate-600 px-4 py-2.5 rounded-xl kid-border hover:bg-slate-50 transition kid-btn">🔄 重新整理</button>
+                    <button onclick="exportToCSV()" class="flex-1 md:flex-none bg-emerald-500 font-bold text-white px-4 py-2.5 rounded-xl kid-border border-emerald-600 kid-btn">📊 下載 Excel</button>
                 </div>
+            </div>
 
-                <!-- 載入中動畫 -->
-                <div id="loading" class="text-center py-10 hidden">
-                    <div class="loader mb-2"></div>
-                    <p class="text-gray-500">正在從 Google 試算表讀取資料...</p>
+            <!-- 老師頁籤 -->
+            <div class="flex overflow-x-auto no-scrollbar gap-3 mb-6">
+                <button onclick="switchTeacherTab('review')" id="tab-tea-review" class="tea-tab whitespace-nowrap px-6 py-3 rounded-2xl font-black text-lg transition kid-btn bg-emerald-500 text-white border-emerald-600">✅ 審核管理</button>
+                <button onclick="switchTeacherTab('quotes')" id="tab-tea-quotes" class="tea-tab whitespace-nowrap px-6 py-3 rounded-2xl font-black text-lg transition kid-btn bg-white text-slate-500 kid-border hover:bg-slate-50">💬 金句管理</button>
+                <button onclick="switchTeacherTab('settings')" id="tab-tea-settings" class="tea-tab whitespace-nowrap px-6 py-3 rounded-2xl font-black text-lg transition kid-btn bg-white text-slate-500 kid-border hover:bg-slate-50">⚙️ 系統設定</button>
+            </div>
+
+            <!-- 內容區塊: 審核管理 -->
+            <div id="tea-content-review" class="tea-content">
+                <div class="bg-white rounded-3xl kid-border kid-shadow border-slate-200 overflow-hidden">
+                    <div class="p-4 bg-slate-50 border-b-2 border-slate-100 flex gap-2 flex-wrap">
+                        <button onclick="filterRecords('pending')" id="btn-filter-pending" class="px-5 py-2 rounded-full font-bold transition border-2 border-amber-400 bg-amber-100 text-amber-800">待審核</button>
+                        <button onclick="filterRecords('all')" id="btn-filter-all" class="px-5 py-2 rounded-full font-bold transition bg-white text-slate-500 border-2 border-transparent hover:bg-slate-100">全部紀錄</button>
+                        <button onclick="filterRecords('approved')" id="btn-filter-approved" class="px-5 py-2 rounded-full font-bold transition bg-emerald-50 text-emerald-600 border-2 border-transparent hover:bg-emerald-100">已通過</button>
+                        <button onclick="filterRecords('rejected')" id="btn-filter-rejected" class="px-5 py-2 rounded-full font-bold transition bg-rose-50 text-rose-600 border-2 border-transparent hover:bg-rose-100">已退回</button>
+                    </div>
+                    
+                    <div class="overflow-x-auto p-2">
+                        <table class="min-w-full text-left border-separate border-spacing-y-2 px-2">
+                            <thead class="text-slate-400 text-sm">
+                                <tr>
+                                    <th class="px-4 py-2 font-bold">班級/姓名</th>
+                                    <th class="px-4 py-2 font-bold">書名/作者</th>
+                                    <th class="px-4 py-2 font-bold w-1/3">心得內容</th>
+                                    <th class="px-4 py-2 font-bold text-center">狀態</th>
+                                    <th class="px-4 py-2 font-bold text-center">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="allRecordsTableBody">
+                                <!-- 動態生成 -->
+                            </tbody>
+                        </table>
+                        <div id="allNoDataMsg" class="text-center py-16 text-slate-400 font-bold hidden">
+                            太棒了！目前這個分類下沒有任務需要處理。
+                        </div>
+                    </div>
                 </div>
+            </div>
 
-                <!-- 狀態篩選器 -->
-                <div class="flex gap-2 mb-4">
-                    <button onclick="filterRecords('all')" id="btn-filter-all" class="px-3 py-1 rounded text-sm font-medium bg-gray-200 text-gray-800">全部</button>
-                    <button onclick="filterRecords('pending')" id="btn-filter-pending" class="px-3 py-1 rounded text-sm font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">待審核</button>
-                    <button onclick="filterRecords('approved')" id="btn-filter-approved" class="px-3 py-1 rounded text-sm font-medium bg-green-100 text-green-800 border border-green-200">已通過</button>
-                    <button onclick="filterRecords('rejected')" id="btn-filter-rejected" class="px-3 py-1 rounded text-sm font-medium bg-red-100 text-red-800 border border-red-200">已退回</button>
+            <!-- 內容區塊: 金句管理 -->
+            <div id="tea-content-quotes" class="tea-content hidden">
+                <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-black text-amber-500 flex items-center gap-2"><span>💬</span> 閱讀金句資料庫</h3>
+                        <button onclick="addNewQuote()" class="bg-amber-400 text-amber-900 font-bold px-4 py-2 rounded-xl kid-border border-amber-500 kid-btn flex items-center gap-1">
+                            <span>➕</span> 新增金句
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="quotesAdminContainer">
+                        <!-- 動態生成金句卡片 -->
+                    </div>
                 </div>
+            </div>
 
-                <!-- 紀錄列表 -->
-                <div class="overflow-x-auto">
-                    <table class="min-w-full bg-white border rounded">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="py-2 px-3 border-b text-left text-xs font-semibold text-gray-600">時間/學生</th>
-                                <th class="py-2 px-3 border-b text-left text-xs font-semibold text-gray-600">書籍資訊</th>
-                                <th class="py-2 px-3 border-b text-left text-xs font-semibold text-gray-600">心得內容</th>
-                                <th class="py-2 px-3 border-b text-center text-xs font-semibold text-gray-600">狀態</th>
-                                <th class="py-2 px-3 border-b text-center text-xs font-semibold text-gray-600">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="recordsTableBody" class="text-sm">
-                            <!-- 資料會由 JS 動態生成 -->
-                        </tbody>
-                    </table>
-                    <p id="noDataMsg" class="text-center text-gray-500 py-8 hidden">目前沒有任何紀錄。</p>
+            <!-- 內容區塊: 系統設定 -->
+            <div id="tea-content-settings" class="tea-content hidden">
+                <div class="bg-white rounded-3xl p-8 max-w-2xl mx-auto kid-border kid-shadow border-slate-200">
+                    <h3 class="text-2xl font-black mb-6 text-slate-700 flex items-center gap-2 border-b-2 border-slate-100 pb-4"><span>⚙️</span> 電腦本機設定</h3>
+                    <p class="text-sm font-bold text-slate-400 mb-6 bg-slate-50 p-3 rounded-xl">這些設定只會儲存在這台裝置的瀏覽器中。更換電腦時需重新輸入。</p>
+                    
+                    <div class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-600 mb-2">Google Apps Script 網址</label>
+                            <input type="text" id="settingGasUrl" class="w-full rounded-2xl p-3 bg-slate-50 kid-border focus:border-emerald-400 focus:bg-white outline-none font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-600 mb-2">管理員密碼</label>
+                            <input type="text" id="settingPwd" class="w-full rounded-2xl p-3 bg-slate-50 kid-border focus:border-emerald-400 focus:bg-white outline-none font-bold">
+                        </div>
+                        <div class="pt-6">
+                            <button onclick="saveSettings()" class="w-full bg-slate-800 text-white font-black py-4 rounded-2xl kid-btn border-slate-900">💾 儲存設定</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
 
     </main>
 
+    <!-- 全域載入動畫 -->
+    <div id="globalLoader" class="fixed inset-0 bg-white/90 backdrop-blur-sm z-[100] flex flex-col justify-center items-center hidden">
+        <div class="text-6xl animate-bounce mb-4">📚</div>
+        <div class="loader mb-4 border-t-amber-400"></div>
+        <p class="text-sky-600 font-black text-xl tracking-widest animate-pulse">正在施展魔法中...</p>
+    </div>
+
     <!-- ========================================== -->
     <!-- 🟢 JavaScript 邏輯區 -->
     <!-- ========================================== -->
     <script>
-        // --- 變數與初始化 ---
+        // --- 全域變數 ---
+        let appSettings = JSON.parse(localStorage.getItem('xingjiaPassportSettings')) || { gasUrl: '', adminPwd: 'admin' };
+        let currentUser = null; 
         let allRecords = [];
-        let currentFilter = 'all';
+        let allQuotes = []; // 存放所有閱讀金句
+        let currentTeacherFilter = 'pending';
+        let base64ImageString = "";
 
-        // 檢查 GAS URL 是否有填寫
-        if (GAS_URL === "在此填入您的網頁應用程式網址") {
-            Swal.fire('系統提示', '請先在程式碼第17行填入 Google Apps Script 的網址！', 'warning');
-        } else {
-            // 頁面載入時先抓取一次資料(為了顯示金句)
-            fetchData(); 
+        // --- 視窗初始化 ---
+        window.onload = () => {
+            if (!appSettings.gasUrl) {
+                showView('setupView');
+            } else {
+                checkAuthAndRoute();
+            }
+        };
+
+        function showLoading(show) {
+            const el = document.getElementById('globalLoader');
+            show ? el.classList.remove('hidden') : el.classList.add('hidden');
         }
 
-        // --- 畫面切換 (學生/老師) ---
-        function switchView(view) {
-            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
-            document.getElementById(view + 'View').classList.remove('hidden');
+        function checkAuthAndRoute() {
+            if (!appSettings.gasUrl) return showView('setupView');
             
-            // 更新導覽列按鈕樣式
-            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('bg-blue-700'));
-            event.target.classList.add('bg-blue-700');
-
-            if(view === 'teacher') fetchData();
+            if (currentUser) {
+                document.getElementById('navUserArea').classList.remove('hidden');
+                document.getElementById('navUserName').innerText = currentUser.role === 'teacher' ? '👨‍🏫 老師' : `👦 ${currentUser.classId} ${currentUser.name}`;
+                
+                if (currentUser.role === 'student') {
+                    showView('studentView');
+                    updateStudentDashboard();
+                } else {
+                    showView('teacherView');
+                    filterRecords(currentTeacherFilter);
+                }
+                fetchData(); // 抓取資料 (包含金句與紀錄)
+            } else {
+                document.getElementById('navUserArea').classList.add('hidden');
+                showView('loginView');
+            }
         }
 
-        // --- 切換心得輸入方式 (文字/圖片) ---
+        function showView(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(viewId).classList.remove('hidden');
+        }
+
+        // --- 設定與登入邏輯 ---
+        function saveInitialSettings() {
+            const url = document.getElementById('setupGasUrl').value.trim();
+            const pwd = document.getElementById('setupPwd').value.trim();
+            if (!url) return Swal.fire('Oops!', '忘記填寫網址囉！', 'error');
+            
+            appSettings = { gasUrl: url, adminPwd: pwd || 'admin' };
+            localStorage.setItem('xingjiaPassportSettings', JSON.stringify(appSettings));
+            Swal.fire({ title: '設定完成！', icon: 'success', confirmButtonColor: '#38bdf8' }).then(() => {
+                checkAuthAndRoute();
+                fetchData(); 
+            });
+        }
+
+        document.getElementById('studentLoginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            currentUser = { 
+                role: 'student', 
+                classId: document.getElementById('loginClass').value.trim(), 
+                name: document.getElementById('loginName').value.trim() 
+            };
+            document.getElementById('studentLoginForm').reset();
+            checkAuthAndRoute();
+        });
+
+        document.getElementById('teacherLoginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const pwd = document.getElementById('loginPwd').value;
+            if (pwd === appSettings.adminPwd) {
+                currentUser = { role: 'teacher' };
+                document.getElementById('teacherLoginForm').reset();
+                checkAuthAndRoute();
+            } else {
+                Swal.fire({ title: '密碼不對喔！', icon: 'error', confirmButtonColor: '#f43f5e' });
+            }
+        });
+
+        function logout() {
+            currentUser = null;
+            checkAuthAndRoute();
+        }
+
+        // --- 資料抓取與處理 (包含金句) ---
+        function fetchData() {
+            if (!appSettings.gasUrl) return;
+            
+            if (allRecords.length === 0) showLoading(true);
+
+            fetch(`${appSettings.gasUrl}?action=getAll`)
+                .then(res => res.json())
+                .then(result => {
+                    if (result.status === 'success') {
+                        // 處理紀錄
+                        allRecords = result.data.records || [];
+                        allRecords.reverse();
+                        
+                        // 處理金句
+                        allQuotes = result.data.quotes || [];
+                        
+                        // 更新畫面
+                        displayRandomQuote(); // 顯示隨機金句
+                        
+                        if (currentUser && currentUser.role === 'student') {
+                            updateStudentDashboard();
+                            renderMyRecords();
+                            renderLeaderboard();
+                        } else if (currentUser && currentUser.role === 'teacher') {
+                            renderTeacherRecords();
+                            renderQuotesAdmin(); // 渲染後台金句清單
+                        }
+                    } else {
+                        console.error(result.message);
+                    }
+                })
+                .catch(err => console.error(err))
+                .finally(() => showLoading(false));
+        }
+
+        // --- 💡 每日金句邏輯 ---
+        function displayRandomQuote() {
+            const el = document.getElementById('randomQuoteText');
+            if (allQuotes.length === 0) {
+                el.innerText = "「閱讀是一座隨身攜帶的避難所。」 — 毛姆";
+                return;
+            }
+            // 隨機挑選一句
+            const rQuote = allQuotes[Math.floor(Math.random() * allQuotes.length)].text;
+            el.innerText = rQuote;
+        }
+
+        // --- 🧑‍🎓 學生專區邏輯 ---
+        function switchStudentTab(tab) {
+            document.querySelectorAll('.stu-tab').forEach(el => {
+                el.classList.remove('bg-amber-400', 'text-amber-900', 'border-amber-500');
+                el.classList.add('bg-white', 'text-slate-500');
+            });
+            const activeTab = document.getElementById(`tab-stu-${tab}`);
+            activeTab.classList.remove('bg-white', 'text-slate-500');
+            activeTab.classList.add('bg-amber-400', 'text-amber-900', 'border-amber-500');
+            
+            document.querySelectorAll('.stu-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`stu-content-${tab}`).classList.remove('hidden');
+        }
+
+        function getLevelInfo(count) {
+            if (count < 5) return { name: '閱讀之卵', icon: '🥚', next: 5, color: 'text-sky-500', bg: 'bg-sky-50' };
+            if (count < 15) return { name: '求知毛蟲', icon: '🐛', next: 15, color: 'text-emerald-500', bg: 'bg-emerald-50' };
+            if (count < 30) return { name: '沉思之蛹', icon: '🪹', next: 30, color: 'text-amber-600', bg: 'bg-amber-50' };
+            return { name: '智慧蝴蝶', icon: '🦋', next: 999, color: 'text-rose-500', bg: 'bg-rose-50' };
+        }
+
+        function updateStudentDashboard() {
+            if (!currentUser || currentUser.role !== 'student') return;
+            
+            const myRecords = allRecords.filter(r => r.classId === currentUser.classId && r.name === currentUser.name);
+            const approvedCount = myRecords.filter(r => r.status === 'approved').length;
+            const pendingCount = myRecords.filter(r => r.status === 'pending').length;
+            
+            document.getElementById('studentDisplayClass').innerText = currentUser.classId;
+            document.getElementById('studentDisplayName').innerText = currentUser.name;
+            document.getElementById('studentApprovedCount').innerText = approvedCount;
+            document.getElementById('studentPendingCount').innerText = pendingCount;
+
+            const lvl = getLevelInfo(approvedCount);
+            document.getElementById('studentLevelIcon').innerText = lvl.icon;
+            
+            const lvlBadge = document.getElementById('studentLevelName');
+            lvlBadge.innerText = lvl.name;
+            lvlBadge.className = `font-black text-xl px-2 py-1 rounded-lg ${lvl.color} ${lvl.bg}`;
+            
+            const hint = document.getElementById('studentNextLevelHint');
+            if (lvl.name === '智慧蝴蝶') {
+                hint.innerText = "太棒了！您已經是最高等級！";
+            } else {
+                hint.innerText = `再讀 ${lvl.next - approvedCount} 本即可進化！`;
+            }
+        }
+
+        function renderMyRecords() {
+            const tbody = document.getElementById('myRecordsTableBody');
+            const noData = document.getElementById('myNoDataMsg');
+            tbody.innerHTML = '';
+            
+            const myRecords = allRecords.filter(r => r.classId === currentUser.classId && r.name === currentUser.name);
+            
+            if (myRecords.length === 0) {
+                noData.classList.remove('hidden');
+            } else {
+                noData.classList.add('hidden');
+                myRecords.forEach(r => {
+                    let statusHtml = r.status === 'approved' ? '<span class="text-emerald-600 bg-emerald-100 px-3 py-1.5 rounded-xl font-black text-sm">✅ 通過</span>' : 
+                                     (r.status === 'rejected' ? '<span class="text-rose-500 bg-rose-100 px-3 py-1.5 rounded-xl font-bold text-sm">❌ 退回</span>' : 
+                                     '<span class="text-amber-600 bg-amber-100 px-3 py-1.5 rounded-xl font-bold text-sm">⏳ 審核中</span>');
+                    
+                    let reviewLink = r.reviewType === 'image' ? `<a href="${r.image}" target="_blank" class="text-sky-500 hover:text-sky-600 font-bold bg-sky-50 px-2 py-1 rounded">📸 看照片</a>` : `<span class="text-slate-400 font-bold bg-slate-50 px-2 py-1 rounded">⌨️ 文字心得</span>`;
+
+                    tbody.innerHTML += `
+                        <tr class="bg-white kid-shadow rounded-2xl">
+                            <td class="py-4 px-4 text-slate-500 font-bold rounded-l-2xl border-y border-l border-slate-100">${r.time.split(' ')[0]}</td>
+                            <td class="py-4 px-4 border-y border-slate-100">
+                                <div class="font-black text-lg text-slate-700">${r.bookTitle}</div>
+                                <div class="text-xs mt-2 inline-block">${reviewLink}</div>
+                            </td>
+                            <td class="py-4 px-4 text-center rounded-r-2xl border-y border-r border-slate-100">${statusHtml}</td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        function renderLeaderboard() {
+            const container = document.getElementById('leaderboardContainer');
+            container.innerHTML = '';
+            
+            const stats = {};
+            allRecords.forEach(r => {
+                if(r.status === 'approved') {
+                    const key = `${r.classId}-${r.name}`;
+                    if(!stats[key]) stats[key] = { classId: r.classId, name: r.name, count: 0 };
+                    stats[key].count++;
+                }
+            });
+
+            const sorted = Object.values(stats).sort((a, b) => b.count - a.count).slice(0, 20);
+
+            if(sorted.length === 0) {
+                container.innerHTML = '<div class="col-span-full text-center py-10 text-slate-400 font-bold">目前還沒有人上榜，趕快搶第一名！</div>';
+                return;
+            }
+
+            sorted.forEach((student, index) => {
+                const lvl = getLevelInfo(student.count);
+                let medal = index === 0 ? '👑' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : '🌟'));
+                let bgClass = index === 0 ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-100';
+                
+                container.innerHTML += `
+                    <div class="${bgClass} kid-border kid-shadow rounded-3xl p-4 flex items-center gap-4">
+                        <div class="text-4xl w-10 text-center">${medal}</div>
+                        <div class="flex-1">
+                            <div class="font-black text-lg text-slate-700">${student.classId} <span class="text-sky-600">${student.name}</span></div>
+                            <div class="text-sm font-bold text-slate-500 mt-1 flex items-center gap-1"><span>${lvl.icon}</span> ${lvl.name}</div>
+                        </div>
+                        <div class="text-3xl font-black text-sky-500 bg-sky-50 w-14 h-14 rounded-2xl flex items-center justify-center">${student.count}</div>
+                    </div>
+                `;
+            });
+        }
+
+        // --- 圖片上傳與表單處理 ---
         function toggleReviewInput() {
             const type = document.querySelector('input[name="reviewType"]:checked').value;
             const textInput = document.getElementById('textInputArea');
             const imgInput = document.getElementById('imageInputArea');
+            const lblText = document.getElementById('label-type-text');
+            const lblImg = document.getElementById('label-type-image');
             
             if (type === 'text') {
-                textInput.classList.remove('hidden');
-                imgInput.classList.add('hidden');
-                document.getElementById('reviewText').required = true;
-                document.getElementById('reviewImage').required = false;
+                textInput.classList.remove('hidden'); imgInput.classList.add('hidden');
+                document.getElementById('reviewText').required = true; document.getElementById('reviewImage').required = false;
+                lblText.className = "flex-1 flex items-center justify-center gap-3 cursor-pointer p-4 rounded-2xl transition kid-border bg-sky-50 border-sky-400 text-sky-700";
+                lblImg.className = "flex-1 flex items-center justify-center gap-3 cursor-pointer p-4 rounded-2xl transition kid-border bg-white text-slate-500 hover:bg-slate-50 border-slate-200";
             } else {
-                textInput.classList.add('hidden');
-                imgInput.classList.remove('hidden');
-                document.getElementById('reviewText').required = false;
-                document.getElementById('reviewImage').required = true;
+                textInput.classList.add('hidden'); imgInput.classList.remove('hidden');
+                document.getElementById('reviewText').required = false; document.getElementById('reviewImage').required = true;
+                lblImg.className = "flex-1 flex items-center justify-center gap-3 cursor-pointer p-4 rounded-2xl transition kid-border bg-indigo-50 border-indigo-400 text-indigo-700";
+                lblText.className = "flex-1 flex items-center justify-center gap-3 cursor-pointer p-4 rounded-2xl transition kid-border bg-white text-slate-500 hover:bg-slate-50 border-slate-200";
             }
         }
-
-        // --- 圖片預覽與壓縮轉換為 Base64 ---
-        let base64ImageString = ""; // 用來儲存準備送出的圖片字串
 
         function previewImage(event) {
             const file = event.target.files[0];
             if (!file) return;
-
-            // 顯示預覽容器
-            const container = document.getElementById('imagePreviewContainer');
-            const preview = document.getElementById('imagePreview');
-            container.classList.remove('hidden');
+            document.getElementById('imagePreviewContainer').classList.remove('hidden');
 
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
-                    // --- 圖片壓縮邏輯 ---
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 800; // 最大寬度
-                    const MAX_HEIGHT = 800;
-                    let width = img.width;
-                    let height = img.height;
-
-                    // 計算等比例縮小
-                    if (width > height) {
-                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                    } else {
-                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
-                    }
-                    canvas.width = width;
-                    canvas.height = height;
-                    
+                    let width = img.width, height = img.height;
+                    if (width > height && width > 800) { height *= 800 / width; width = 800; }
+                    else if (height > 800) { width *= 800 / height; height = 800; }
+                    canvas.width = width; canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // 轉為 jpeg 格式並降低品質 (0.7 = 70% 品質) 以減小檔案體積
                     base64ImageString = canvas.toDataURL('image/jpeg', 0.7); 
-                    preview.src = base64ImageString; // 更新預覽圖
+                    document.getElementById('imagePreview').src = base64ImageString;
                 }
                 img.src = e.target.result;
             }
             reader.readAsDataURL(file);
         }
 
-        // --- 送出表單 (學生打卡) ---
         document.getElementById('recordForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            const type = document.querySelector('input[name="reviewType"]:checked').value;
             
-            const submitBtn = document.getElementById('submitBtn');
-            const reviewType = document.querySelector('input[name="reviewType"]:checked').value;
-            
-            // 檢查圖片是否已選擇
-            if (reviewType === 'image' && !base64ImageString) {
-                Swal.fire('錯誤', '請選擇要上傳的圖片！', 'error');
-                return;
+            if (type === 'image' && !base64ImageString) {
+                return Swal.fire({title:'哎呀！', text:'你忘記上傳照片了啦！', icon:'warning', confirmButtonColor:'#f59e0b'});
             }
 
             const data = {
-                classId: document.getElementById('classId').value,
-                name: document.getElementById('name').value,
+                classId: currentUser.classId, name: currentUser.name,
                 bookTitle: document.getElementById('bookTitle').value,
                 author: document.getElementById('author').value,
                 publisher: document.getElementById('publisher').value,
-                pages: document.getElementById('pages').value,
-                reviewType: reviewType,
-                review: reviewType === 'text' ? document.getElementById('reviewText').value : '',
-                image: reviewType === 'image' ? base64ImageString : ''
+                reviewType: type,
+                review: type === 'text' ? document.getElementById('reviewText').value : '',
+                image: type === 'image' ? base64ImageString : ''
             };
 
-            // 改變按鈕狀態
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<div class="loader border-t-white" style="width:20px;height:20px;border-width:2px;"></div> 處理中...';
+            showLoading(true);
 
-            // 發送至 GAS
-            fetch(GAS_URL, {
+            fetch(appSettings.gasUrl, {
                 method: 'POST',
                 body: JSON.stringify({ action: 'addRecord', data: data })
             })
             .then(res => res.json())
-            .then(result => {
-                if (result.status === 'success') {
-                    Swal.fire('成功！', '閱讀紀錄已送出，等待老師審核！', 'success');
+            .then(res => {
+                if (res.status === 'success') {
+                    Swal.fire({title:'大功告成！', text:'已送出給老師審核！', icon:'success', confirmButtonColor:'#38bdf8'});
                     document.getElementById('recordForm').reset();
                     document.getElementById('imagePreviewContainer').classList.add('hidden');
-                    base64ImageString = ""; // 清空圖片資料
-                } else {
-                    Swal.fire('發生錯誤', result.message || '無法儲存', 'error');
-                }
+                    base64ImageString = "";
+                    fetchData(); 
+                    switchStudentTab('list'); 
+                } else throw new Error(res.message);
             })
-            .catch(error => {
-                console.error('Error:', error);
-                Swal.fire('網路錯誤', '無法連線至伺服器，請稍後再試。', 'error');
-            })
-            .finally(() => {
-                // 恢復按鈕狀態
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '送出紀錄';
-            });
+            .catch(err => Swal.fire('發生錯誤', err.message, 'error'))
+            .finally(() => showLoading(false));
         });
 
-        // --- 取得所有資料 (含金句與紀錄) ---
-        function fetchData() {
-            if(!document.getElementById('teacherView').classList.contains('hidden')){
-                document.getElementById('loading').classList.remove('hidden');
-                document.getElementById('recordsTableBody').innerHTML = '';
-            }
-
-            fetch(`${GAS_URL}?action=getAll`)
-            .then(res => res.json())
-            .then(result => {
-                if (result.status === 'success') {
-                    // 更新隨機金句
-                    if(result.data.quotes && result.data.quotes.length > 0) {
-                        const randomQuote = result.data.quotes[Math.floor(Math.random() * result.data.quotes.length)].text;
-                        document.getElementById('quoteDisplay').textContent = randomQuote;
-                    }
-
-                    // 儲存紀錄並渲染表格
-                    allRecords = result.data.records || [];
-                    
-                    // 倒序排列 (最新的在最上面)
-                    allRecords.reverse();
-                    
-                    renderTable();
-                } else {
-                    console.error("資料獲取失敗:", result);
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching data:', error);
-            })
-            .finally(() => {
-                document.getElementById('loading').classList.add('hidden');
+        // --- 👨‍🏫 老師管理後台邏輯 ---
+        function switchTeacherTab(tab) {
+            document.querySelectorAll('.tea-tab').forEach(el => {
+                el.classList.remove('bg-emerald-500', 'text-white', 'border-emerald-600');
+                el.classList.add('bg-white', 'text-slate-500');
             });
+            const activeTab = document.getElementById(`tab-tea-${tab}`);
+            activeTab.classList.remove('bg-white', 'text-slate-500');
+            activeTab.classList.add('bg-emerald-500', 'text-white', 'border-emerald-600');
+            
+            document.querySelectorAll('.tea-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tea-content-${tab}`).classList.remove('hidden');
+
+            if (tab === 'settings') {
+                document.getElementById('settingGasUrl').value = appSettings.gasUrl;
+                document.getElementById('settingPwd').value = appSettings.adminPwd;
+            }
         }
 
-        // --- 渲染老師後台表格 ---
-        function renderTable() {
-            const tbody = document.getElementById('recordsTableBody');
-            const noDataMsg = document.getElementById('noDataMsg');
+        function filterRecords(status) {
+            currentTeacherFilter = status;
+            
+            const btnPending = document.getElementById('btn-filter-pending');
+            const btnAll = document.getElementById('btn-filter-all');
+            const btnApprove = document.getElementById('btn-filter-approved');
+            const btnReject = document.getElementById('btn-filter-rejected');
+
+            // Reset all borders to transparent
+            [btnPending, btnAll, btnApprove, btnReject].forEach(b => b.classList.remove('border-amber-400', 'border-slate-300', 'border-emerald-400', 'border-rose-400'));
+
+            if(status === 'pending') btnPending.classList.add('border-amber-400');
+            if(status === 'all') btnAll.classList.add('border-slate-300');
+            if(status === 'approved') btnApprove.classList.add('border-emerald-400');
+            if(status === 'rejected') btnReject.classList.add('border-rose-400');
+            
+            renderTeacherRecords();
+        }
+
+        function renderTeacherRecords() {
+            const tbody = document.getElementById('allRecordsTableBody');
+            const noData = document.getElementById('allNoDataMsg');
             tbody.innerHTML = '';
 
-            // 根據目前過濾狀態篩選
-            const filteredRecords = currentFilter === 'all' 
-                ? allRecords 
-                : allRecords.filter(r => r.status === currentFilter);
+            const filtered = currentTeacherFilter === 'all' ? allRecords : allRecords.filter(r => r.status === currentTeacherFilter);
 
-            if (filteredRecords.length === 0) {
-                noDataMsg.classList.remove('hidden');
+            if (filtered.length === 0) {
+                noData.classList.remove('hidden');
             } else {
-                noDataMsg.classList.add('hidden');
-                
-                filteredRecords.forEach(record => {
-                    const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-gray-50 border-b';
-                    
-                    // 狀態標籤樣式
+                noData.classList.add('hidden');
+                filtered.forEach(r => {
                     let statusHtml = '';
-                    if (record.status === 'approved') statusHtml = '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">已通過</span>';
-                    else if (record.status === 'rejected') statusHtml = '<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">已退回</span>';
-                    else statusHtml = '<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">待審核</span>';
+                    if (r.status === 'approved') statusHtml = '<span class="bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-xl font-bold text-sm">已通過</span>';
+                    else if (r.status === 'rejected') statusHtml = '<span class="bg-rose-100 text-rose-700 px-3 py-1.5 rounded-xl font-bold text-sm">已退回</span>';
+                    else statusHtml = '<span class="bg-amber-100 text-amber-700 px-3 py-1.5 rounded-xl font-bold text-sm">待審核</span>';
 
-                    // 心得內容顯示 (文字或圖片)
-                    let reviewHtml = '';
-                    if (record.reviewType === 'image') {
-                        reviewHtml = `<a href="${record.image}" target="_blank" class="text-blue-500 hover:underline flex items-center gap-1"><span>🖼️</span> 查看圖片</a>`;
-                    } else {
-                        // 限制字數預覽
-                        const shortReview = record.review.length > 30 ? record.review.substring(0, 30) + '...' : record.review;
-                        reviewHtml = `<span title="${record.review}">${shortReview}</span>`;
-                    }
+                    let reviewHtml = r.reviewType === 'image' ? 
+                        `<a href="${r.image}" target="_blank" class="inline-flex items-center gap-1 bg-sky-50 text-sky-600 px-4 py-2 rounded-xl font-black hover:bg-sky-100 kid-btn border-2 border-sky-200">🖼️ 查看學習單</a>` : 
+                        `<div class="text-sm font-bold text-slate-600 bg-slate-50 p-3 rounded-xl max-h-24 overflow-y-auto border border-slate-200">${r.review}</div>`;
 
-                    tr.innerHTML = `
-                        <td class="py-2 px-3 align-top">
-                            <div class="text-xs text-gray-500">${record.time.split(' ')[0]}</div>
-                            <div class="font-medium">${record.classId} ${record.name}</div>
-                        </td>
-                        <td class="py-2 px-3 align-top">
-                            <div class="font-medium text-blue-700">${record.bookTitle}</div>
-                            <div class="text-xs text-gray-600">${record.author} / ${record.pages}頁</div>
-                        </td>
-                        <td class="py-2 px-3 align-top max-w-xs">
-                            ${reviewHtml}
-                        </td>
-                        <td class="py-2 px-3 align-top text-center">
-                            ${statusHtml}
-                        </td>
-                        <td class="py-2 px-3 align-top text-center">
-                            ${record.status === 'pending' ? `
-                                <button onclick="updateStatus('${record.id}', 'approveRecord')" class="bg-green-500 hover:bg-green-600 text-white p-1 rounded mb-1 text-xs w-full">通過</button>
-                                <button onclick="updateStatus('${record.id}', 'rejectRecord')" class="bg-red-400 hover:bg-red-500 text-white p-1 rounded text-xs w-full">退回</button>
-                            ` : `
-                                <button onclick="deleteRecord('${record.id}')" class="text-red-500 hover:underline text-xs">刪除</button>
-                            `}
-                        </td>
+                    tbody.innerHTML += `
+                        <tr class="bg-white hover:bg-slate-50 transition rounded-2xl group">
+                            <td class="py-3 px-4 rounded-l-2xl border-y border-l border-slate-100">
+                                <div class="font-black text-lg text-slate-700">${r.classId} <span class="text-sky-600">${r.name}</span></div>
+                                <div class="text-xs font-bold text-slate-400 mt-1">${r.time.split(' ')[0]}</div>
+                            </td>
+                            <td class="py-3 px-4 border-y border-slate-100">
+                                <div class="font-black text-slate-700">${r.bookTitle}</div>
+                                <div class="text-xs font-bold text-slate-500 mt-1">${r.author || '無作者'}</div>
+                            </td>
+                            <td class="py-3 px-4 border-y border-slate-100">${reviewHtml}</td>
+                            <td class="py-3 px-4 text-center border-y border-slate-100">${statusHtml}</td>
+                            <td class="py-3 px-4 text-center rounded-r-2xl border-y border-r border-slate-100">
+                                ${r.status === 'pending' ? `
+                                    <div class="flex flex-col gap-2">
+                                        <button onclick="updateStatus('${r.id}', 'approveRecord')" class="bg-emerald-400 text-emerald-900 font-bold py-1.5 px-3 rounded-xl kid-btn border-emerald-500 text-sm">✅ 通過</button>
+                                        <button onclick="updateStatus('${r.id}', 'rejectRecord')" class="bg-rose-300 text-rose-900 font-bold py-1.5 px-3 rounded-xl kid-btn border-rose-400 text-sm">退回</button>
+                                    </div>
+                                ` : `<button onclick="deleteRecord('${r.id}')" class="text-rose-400 hover:text-rose-600 font-bold text-sm bg-rose-50 px-3 py-1.5 rounded-lg">🗑️ 刪除</button>`}
+                            </td>
+                        </tr>
                     `;
-                    tbody.appendChild(tr);
                 });
             }
-            updateFilterButtons();
         }
 
-        // --- 過濾紀錄 ---
-        function filterRecords(status) {
-            currentFilter = status;
-            renderTable();
-        }
-
-        function updateFilterButtons() {
-            ['all', 'pending', 'approved', 'rejected'].forEach(status => {
-                const btn = document.getElementById(`btn-filter-${status}`);
-                if(status === currentFilter) {
-                    btn.classList.add('ring-2', 'ring-blue-400', 'ring-offset-1');
-                } else {
-                    btn.classList.remove('ring-2', 'ring-blue-400', 'ring-offset-1');
-                }
-            });
-        }
-
-        // --- 更新狀態 (審核通過/退回) ---
         function updateStatus(id, actionCode) {
-            const actionText = actionCode === 'approveRecord' ? '通過' : '退回';
-            
+            showLoading(true);
+            fetch(appSettings.gasUrl, {
+                method: 'POST', body: JSON.stringify({ action: actionCode, id: id })
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === 'success') {
+                    const idx = allRecords.findIndex(r => r.id === id);
+                    if(idx > -1) allRecords[idx].status = actionCode === 'approveRecord' ? 'approved' : 'rejected';
+                    renderTeacherRecords();
+                } else Swal.fire('錯誤', res.message, 'error');
+            })
+            .finally(() => showLoading(false));
+        }
+
+        function deleteRecord(id) {
             Swal.fire({
-                title: `確定要${actionText}此紀錄嗎？`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: '確定',
-                cancelButtonText: '取消'
+                title: '確定要刪除嗎？', text: "如果是圖片也會從雲端硬碟刪除喔！", icon: 'warning',
+                showCancelButton: true, confirmButtonText: '確定刪除', confirmButtonColor: '#f43f5e', cancelButtonText: '取消'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    
-                    Swal.fire({ title: '處理中...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
-
-                    fetch(GAS_URL, {
-                        method: 'POST',
-                        body: JSON.stringify({ action: actionCode, id: id })
+                    showLoading(true);
+                    fetch(appSettings.gasUrl, {
+                        method: 'POST', body: JSON.stringify({ action: 'deleteRecord', id: id })
                     })
                     .then(res => res.json())
                     .then(res => {
                         if (res.status === 'success') {
-                            Swal.fire('完成！', `紀錄已${actionText}`, 'success');
-                            // 在本地端更新資料，不用重新抓取
-                            const idx = allRecords.findIndex(r => r.id === id);
-                            if(idx > -1) allRecords[idx].status = actionCode === 'approveRecord' ? 'approved' : 'rejected';
-                            renderTable();
-                        } else {
-                            Swal.fire('錯誤', res.message, 'error');
-                        }
-                    });
+                            allRecords = allRecords.filter(r => r.id !== id);
+                            renderTeacherRecords();
+                        } else Swal.fire('錯誤', res.message, 'error');
+                    })
+                    .finally(() => showLoading(false));
                 }
             });
         }
 
-        // --- 刪除紀錄 ---
-        function deleteRecord(id) {
+        // --- 💬 金句管理邏輯 ---
+        function renderQuotesAdmin() {
+            const container = document.getElementById('quotesAdminContainer');
+            container.innerHTML = '';
+            
+            if (allQuotes.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400 font-bold bg-slate-50 rounded-2xl">目前還沒有金句，趕快新增一句來鼓勵孩子們吧！</div>`;
+                return;
+            }
+
+            allQuotes.forEach(q => {
+                container.innerHTML += `
+                    <div class="bg-amber-50 rounded-2xl p-5 kid-border border-amber-200 relative group">
+                        <div class="text-3xl absolute -top-3 -left-3 opacity-50">✨</div>
+                        <p class="font-bold text-slate-700 text-lg pr-12">${q.text}</p>
+                        <div class="mt-4 flex justify-end gap-2 border-t border-amber-200 pt-3">
+                            <button onclick="editQuote('${q.id}', '${q.text.replace(/'/g, "\\'")}')" class="text-sm font-bold text-sky-600 bg-sky-100 px-3 py-1.5 rounded-lg hover:bg-sky-200">編輯</button>
+                            <button onclick="deleteQuoteAction('${q.id}')" class="text-sm font-bold text-rose-600 bg-rose-100 px-3 py-1.5 rounded-lg hover:bg-rose-200">刪除</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function addNewQuote() {
             Swal.fire({
-                title: '確定要永久刪除此紀錄嗎？',
-                text: "如果含有圖片，雲端檔案也會一併刪除且無法恢復！",
-                icon: 'error',
+                title: '新增閱讀金句',
+                input: 'textarea',
+                inputPlaceholder: '請輸入要鼓勵孩子的話...',
                 showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
+                confirmButtonText: '💾 儲存',
+                confirmButtonColor: '#fbbf24',
+                cancelButtonText: '取消',
+                inputValidator: (value) => { if (!value) return '金句不能是空白的喔！'; }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    showLoading(true);
+                    fetch(appSettings.gasUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'addQuote', data: { text: result.value } })
+                    })
+                    .then(res => res.json())
+                    .then(res => {
+                        if (res.status === 'success') {
+                            Swal.fire({title:'新增成功', icon:'success', timer:1500, showConfirmButton:false});
+                            fetchData(); // 重新抓取包含新金句的資料
+                        } else Swal.fire('錯誤', res.message, 'error');
+                    })
+                    .finally(() => showLoading(false));
+                }
+            });
+        }
+
+        function editQuote(id, oldText) {
+            Swal.fire({
+                title: '編輯閱讀金句',
+                input: 'textarea',
+                inputValue: oldText,
+                showCancelButton: true,
+                confirmButtonText: '💾 更新',
+                confirmButtonColor: '#38bdf8',
+                cancelButtonText: '取消',
+                inputValidator: (value) => { if (!value) return '金句不能是空白的喔！'; }
+            }).then((result) => {
+                if (result.isConfirmed && result.value !== oldText) {
+                    showLoading(true);
+                    fetch(appSettings.gasUrl, {
+                        method: 'POST',
+                        body: JSON.stringify({ action: 'updateQuote', id: id, data: { text: result.value } })
+                    })
+                    .then(res => res.json())
+                    .then(res => {
+                        if (res.status === 'success') {
+                            fetchData();
+                        } else Swal.fire('錯誤', res.message, 'error');
+                    })
+                    .finally(() => showLoading(false));
+                }
+            });
+        }
+
+        function deleteQuoteAction(id) {
+            Swal.fire({
+                title: '確定要刪除這句金句嗎？',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f43f5e',
                 confirmButtonText: '確定刪除',
                 cancelButtonText: '取消'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    
-                    Swal.fire({ title: '刪除中...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
-
-                    fetch(GAS_URL, {
+                    showLoading(true);
+                    fetch(appSettings.gasUrl, {
                         method: 'POST',
-                        body: JSON.stringify({ action: 'deleteRecord', id: id })
+                        body: JSON.stringify({ action: 'deleteQuote', id: id })
                     })
                     .then(res => res.json())
                     .then(res => {
                         if (res.status === 'success') {
-                            Swal.fire('完成！', '紀錄已刪除', 'success');
-                            allRecords = allRecords.filter(r => r.id !== id);
-                            renderTable();
-                        } else {
-                            Swal.fire('錯誤', res.message, 'error');
-                        }
-                    });
+                            fetchData();
+                        } else Swal.fire('錯誤', res.message, 'error');
+                    })
+                    .finally(() => showLoading(false));
                 }
             });
         }
 
+        // --- 系統設定與匯出 ---
+        function saveSettings() {
+            const url = document.getElementById('settingGasUrl').value.trim();
+            const pwd = document.getElementById('settingPwd').value.trim();
+            if (!url) return Swal.fire('提示', '網址不能為空喔！', 'warning');
+            
+            appSettings = { gasUrl: url, adminPwd: pwd || 'admin' };
+            localStorage.setItem('xingjiaPassportSettings', JSON.stringify(appSettings));
+            Swal.fire({title: '已儲存', icon: 'success', confirmButtonColor: '#10b981'});
+        }
+
+        function exportToCSV() {
+            if (allRecords.length === 0) return Swal.fire('提示', '目前沒有資料可匯出', 'info');
+            
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
+            csvContent += "時間,班級,姓名,書名,作者,出版社,心得類型,內容或連結,狀態\n";
+            
+            allRecords.forEach(r => {
+                let row = [
+                    r.time, r.classId, r.name, 
+                    `"${r.bookTitle.replace(/"/g, '""')}"`, 
+                    `"${(r.author||'').replace(/"/g, '""')}"`, 
+                    `"${(r.publisher||'').replace(/"/g, '""')}"`,
+                    r.reviewType === 'image' ? '圖片' : '文字',
+                    r.reviewType === 'image' ? r.image : `"${(r.review||'').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
+                    r.status === 'approved' ? '已通過' : (r.status === 'pending' ? '待審核' : '退回')
+                ];
+                csvContent += row.join(",") + "\n";
+            });
+
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", `興嘉閱讀護照總表_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     </script>
 </body>
 </html>
