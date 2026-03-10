@@ -436,6 +436,16 @@
         let appData = { records: [], quotes: [] }; 
         let chartInstance = null;
 
+        // --- 🔒 姓名遮蔽工具 (將名字中間變為 O) ---
+        function maskName(name) {
+            if (!name) return '';
+            if (name.length <= 1) return name;
+            if (name.length === 2) return name[0] + 'O';
+            if (name.length === 3) return name[0] + 'O' + name[2];
+            // 超過三個字的情況 (如:歐陽修平 -> 歐OO平)
+            return name[0] + 'O'.repeat(name.length - 2) + name[name.length - 1];
+        }
+
         // --- 資料正規化工具 ---
         function normalizeRecords(rawRecords) {
             if (!Array.isArray(rawRecords)) return [];
@@ -909,7 +919,7 @@
         }
 
         // ==========================================
-        // 🎨 畫面渲染邏輯 (其餘保持不變)
+        // 🎨 畫面渲染邏輯
         // ==========================================
         
         function updateRandomQuote() {
@@ -945,7 +955,8 @@
                 rc.innerHTML = reviews.map(r => `
                     <div class="p-4 bg-sky-50 rounded-2xl kid-border border-sky-100 mb-3">
                         <div class="flex justify-between items-center mb-2">
-                            <span class="font-black text-sky-700">${r.class} ${r.name}</span>
+                            <!-- ✅ 在大廳的心得區套用 maskName 來隱藏名字 -->
+                            <span class="font-black text-sky-700">${r.class} ${maskName(r.name)}</span>
                             <span class="text-xs font-bold text-sky-400">${(r.date || '').split(' ')[0]}</span>
                         </div>
                         <div class="font-bold text-slate-700 text-sm mb-1">《${r.title}》 ${r.author ? `<span class="text-xs text-slate-400">/ ${r.author}</span>` : ''}</div>
@@ -956,6 +967,7 @@
             } else rc.innerHTML = '<div class="text-center text-slate-400 py-10 font-bold">目前還沒有心得發表，趕快成為第一位吧！</div>';
 
             const userCounts = {};
+            // 計算時依然使用全名來確保不會把同名同姓(但不同字)的人算在一起
             approved.forEach(r => { if(r.name && r.class) userCounts[`${r.class} ${r.name}`] = (userCounts[`${r.class} ${r.name}`] || 0) + 1; });
             const leaderboard = Object.entries(userCounts).map(([k, count]) => ({ class: k.split(' ')[0], name: k.split(' ')[1], count })).sort((a, b) => b.count - a.count).slice(0, 9);
 
@@ -968,7 +980,11 @@
                         <div class="${bgClass.split(' ')[0]} rounded-2xl p-4 flex items-center gap-4 kid-border ${bgClass.split(' ')[1]} relative">
                             ${index === 0 ? '<div class="absolute -top-3 -left-3 text-3xl">👑</div>' : ''}
                             <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center font-black text-xl ${bgClass.split(' ')[2]} shadow-sm">${badge}</div>
-                            <div class="flex-1"><div class="font-black text-lg text-slate-700">${user.class} ${user.name}</div><div class="text-sm font-bold text-amber-600">${user.count} 本書</div></div>
+                            <div class="flex-1">
+                                <!-- ✅ 在榮譽榜套用 maskName 來隱藏名字 -->
+                                <div class="font-black text-lg text-slate-700">${user.class} ${maskName(user.name)}</div>
+                                <div class="text-sm font-bold text-amber-600">${user.count} 本書</div>
+                            </div>
                         </div>
                     `;
                 }).join('');
@@ -1030,6 +1046,7 @@
             tbody.innerHTML = filtered.map(r => `
                 <tr class="hover:bg-slate-100 transition border-b border-slate-100 text-sm">
                     <td class="p-3 whitespace-nowrap">
+                        <!-- ✅ 老師端依然顯示學生全名，不使用 maskName -->
                         <div class="font-black text-slate-700">${r.class || ''}</div>
                         <div class="text-sky-600 font-bold">${r.name || ''}</div>
                         <div class="text-xs text-slate-400">${(r.date || '').split(' ')[0]}</div>
