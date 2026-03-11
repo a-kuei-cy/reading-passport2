@@ -50,39 +50,11 @@
                     <span id="navUserName" class="text-sm font-bold text-sky-700 bg-sky-100 px-4 py-1.5 rounded-full kid-border border-sky-200"></span>
                     <button onclick="logout()" class="text-sm font-bold text-rose-500 hover:text-rose-600 bg-rose-50 px-3 py-1.5 rounded-full transition hover:bg-rose-100">登出</button>
                 </div>
-                <!-- 系統設定齒輪按鈕 -->
-                <button onclick="showView('setupView')" class="text-2xl hover:scale-110 transition hover:rotate-90 duration-300" title="系統連接設定">⚙️</button>
             </div>
         </div>
     </nav>
 
     <main class="container mx-auto px-4 py-6 max-w-6xl">
-
-        <!-- ========================================== -->
-        <!-- 🛠️ 系統連接設定 (Setup View) -->
-        <!-- ========================================== -->
-        <section id="setupView" class="view-section hidden flex items-center justify-center min-h-[70vh]">
-            <div class="bg-white rounded-3xl p-8 kid-border kid-shadow border-amber-300 max-w-md w-full text-center relative">
-                <div class="text-7xl mb-4 animate-bounce">🛠️</div>
-                <h2 class="text-3xl font-black text-amber-600 mb-2">系統連接設定</h2>
-                <p class="text-slate-500 font-bold mb-6 text-sm">請填寫後端網址才能開始魔法旅程！</p>
-                
-                <form id="setupForm" class="space-y-5 text-left">
-                    <div>
-                        <label class="block text-sm font-black text-slate-600 mb-2">Google Apps Script 網址</label>
-                        <input type="text" id="setupUrl" required class="w-full rounded-2xl p-4 bg-amber-50 kid-border border-amber-200 focus:border-amber-400 focus:bg-white outline-none font-bold" placeholder="https://script.google.com/macros/...">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-black text-slate-600 mb-2">管理員通關密碼 (可自訂)</label>
-                        <input type="password" id="setupPwd" required class="w-full rounded-2xl p-4 bg-amber-50 kid-border border-amber-200 focus:border-amber-400 focus:bg-white outline-none font-bold" placeholder="預設請輸入 admin">
-                    </div>
-                    <button type="submit" class="w-full bg-amber-400 text-amber-900 font-black text-xl py-4 rounded-2xl kid-btn border-amber-500 mt-2">
-                        ✨ 儲存並開始
-                    </button>
-                </form>
-                <div class="mt-4 text-xs font-bold text-slate-400">設定會儲存在您的瀏覽器中</div>
-            </div>
-        </section>
 
         <!-- ========================================== -->
         <!-- 🚪 前端入口處 (全校動態 + 榮譽榜 + 登入) -->
@@ -455,12 +427,19 @@
     <!-- ⚙️ JavaScript 核心程式碼 -->
     <!-- ========================================== -->
     <script>
-        // ==========================================
-        // 🚨 動態讀取系統設定 (從 LocalStorage 取出)
-        // ==========================================
-        let YOUR_GAS_URL = localStorage.getItem('GAS_URL') || '';
-        let ADMIN_PASSWORD = localStorage.getItem('ADMIN_PWD') || 'admin';
+        // 🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟
+        // 🚨 老師請注意：請在這裡貼上您的 Google Apps Script 網址！ 🚨
+        // 🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟
         
+        const YOUR_GAS_URL = "https://script.google.com/macros/s/AKfycbyU4Ljogie6v0WdGG_UEul-gRbS1_U-rIFIWbn717DYU4QMdO8ti40QQ9DU2BRsddhJ/exec"; 
+        
+        // --- 預設的老師後台登入密碼 ---
+        const ADMIN_PASSWORD = "S2860885*110";
+        
+        // 🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟
+        // (以上的網址填寫完畢後，就可以存檔並給學生使用了！)
+
+
         // 狀態變數
         let currentUser = null; 
         let appData = { records: [], quotes: [] }; 
@@ -493,37 +472,20 @@
         }
 
         window.onload = () => {
-            // 如果還沒設定網址，強制顯示設定畫面
-            if (!YOUR_GAS_URL) {
-                showView('setupView');
-            } else {
-                document.getElementById('setupUrl').value = YOUR_GAS_URL;
-                document.getElementById('setupPwd').value = ADMIN_PASSWORD;
-                showView('loginView');
+            showView('loginView'); // 直接進入首頁
+            
+            // 檢查老師是否已經填寫網址
+            if (YOUR_GAS_URL && !YOUR_GAS_URL.includes("在此貼上")) {
                 fetchPublicData(); 
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '尚未設定網址',
+                    text: '請老師使用文字編輯器打開這個 HTML 檔案，將您的 GAS 網址貼入程式碼中（約第340行），學生才能開始使用喔！',
+                    confirmButtonText: '我知道了'
+                });
             }
         };
-
-        // --- 處理設定表單提交 ---
-        document.getElementById('setupForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const url = document.getElementById('setupUrl').value.trim();
-            const pwd = document.getElementById('setupPwd').value.trim();
-            
-            if(!url.includes('script.google.com')) {
-                return Swal.fire('網址格式錯誤', '請確認填寫的是 Google Apps Script 提供的網址', 'warning');
-            }
-
-            // 儲存設定
-            localStorage.setItem('GAS_URL', url);
-            localStorage.setItem('ADMIN_PWD', pwd || 'admin');
-            YOUR_GAS_URL = url;
-            ADMIN_PASSWORD = pwd || 'admin';
-
-            Swal.fire({ icon: 'success', title: '設定完成！', timer: 1200, showConfirmButton: false });
-            showView('loginView');
-            fetchPublicData();
-        });
 
         // --- 字數統計與圖片預覽 ---
         document.getElementById('reviewText').addEventListener('input', function() {
@@ -580,7 +542,7 @@
         // --- 登入/登出 ---
         document.getElementById('studentLoginForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            if(!YOUR_GAS_URL) return Swal.fire('請先設定', '請點擊右上角齒輪設定系統網址', 'warning');
+            if(!YOUR_GAS_URL || YOUR_GAS_URL.includes("在此貼上")) return Swal.fire('尚未設定', '請老師先在程式碼中填入 GAS 網址', 'warning');
             
             const cls = document.getElementById('loginClass').value.trim();
             const name = document.getElementById('loginName').value.trim();
@@ -595,7 +557,7 @@
 
         document.getElementById('teacherLoginForm').addEventListener('submit', (e) => {
             e.preventDefault();
-            if(!YOUR_GAS_URL) return Swal.fire('請先設定', '請點擊右上角齒輪設定系統網址', 'warning');
+            if(!YOUR_GAS_URL || YOUR_GAS_URL.includes("在此貼上")) return Swal.fire('尚未設定', '請老師先在程式碼中填入 GAS 網址', 'warning');
 
             if (document.getElementById('loginPwd').value === ADMIN_PASSWORD) {
                 currentUser = { role: 'teacher' };
@@ -620,7 +582,7 @@
         
         // 取得全校資料 (首頁大廳)
         async function fetchPublicData() {
-            if (!YOUR_GAS_URL) return;
+            if (!YOUR_GAS_URL || YOUR_GAS_URL.includes("在此貼上")) return;
             const rc = document.getElementById('publicReviewsContainer');
             try {
                 rc.innerHTML = '<div class="text-center text-slate-400 py-10 font-bold">資料連線載入中...</div>';
@@ -636,7 +598,7 @@
                 }
             } catch (err) { 
                 console.error("Fetch Error:", err); 
-                rc.innerHTML = '<div class="text-center text-rose-500 py-10 font-bold">❌ 連線失敗！<br>請點擊右上角「⚙️」確認 GAS 網址是否填寫正確。</div>';
+                rc.innerHTML = '<div class="text-center text-rose-500 py-10 font-bold">❌ 連線失敗！<br>請確認程式碼內的 GAS 網址是否填寫正確。</div>';
             }
         }
 
@@ -646,7 +608,6 @@
                 Swal.fire({ title: '魔法護照讀取中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
                 
                 // 直接抓取全校最新資料，再從前端過濾出這名學生。
-                // 這個做法可以100%避開後端 getPersonal 沒寫好或是撈不到資料的問題！
                 let res = await fetch(YOUR_GAS_URL);
                 let json = await res.json();
                 Swal.close();
