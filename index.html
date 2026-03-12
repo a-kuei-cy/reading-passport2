@@ -95,10 +95,10 @@
   </script>
 
   <script type="text/babel">
-    const { useState, useEffect, useMemo } = React;
+    const { useState, useEffect } = React; // 移除了容易報錯的 useMemo
 
     // 預設的 GAS 網址 (請在系統設定中更改)
-    const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbyU4Ljogie6v0WdGG_UEul-gRbS1_U-rIFIWbn717DYU4QMdO8ti40QQ9DU2BRsddhJ/exec';
+    const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz/exec';
 
     // --- 共用 UI 元件 ---
     const Icon = ({ name, size = 18, className = "" }) => <i className={`fas fa-${name} ${className}`} style={{ fontSize: size }}></i>;
@@ -156,12 +156,18 @@
       const [isFormModalOpen, setIsFormModalOpen] = useState(false);
       const [viewRecordModal, setViewRecordModal] = useState({ show: false, data: null });
 
-      // 載入資料
+      // 載入資料 (改為 POST 以避免 GET 的 CORS 問題，並加入 text/plain)
       const loadData = async () => {
-        if (!gasUrl) return;
+        if (!gasUrl || gasUrl === DEFAULT_GAS_URL) {
+           return; // 尚未設定有效網址前不載入
+        }
         setLoading(true);
         try {
-          const res = await fetch(`${gasUrl}?action=getAll&t=${new Date().getTime()}`);
+          const res = await fetch(gasUrl, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'getAll' }),
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' } // 修正 CORS 關鍵
+          });
           const json = await res.json();
           if (json.status === 'success') {
             setRecords((json.data.records || []).reverse());
@@ -169,7 +175,8 @@
             showMsg('載入失敗', '伺服器回傳錯誤: ' + json.message);
           }
         } catch (e) {
-          showMsg('網路錯誤', '無法連接到伺服器，請確認設定中的 GAS 網址是否正確。');
+          console.error(e);
+          showMsg('網路錯誤', '無法連接到伺服器。\n請確認：\n1. 設定中的 GAS 網址是否正確\n2. GAS 部署的存取權限是否設為「所有人」');
         }
         setLoading(false);
       };
@@ -180,12 +187,14 @@
         setMsgBox({ show: true, title, msg, onConfirm });
       };
 
+      // 所有的 API 呼叫都加上 Content-Type: text/plain
       const apiCall = async (action, id = null, data = null) => {
         setLoading(true);
         try {
           const res = await fetch(gasUrl, {
             method: 'POST',
-            body: JSON.stringify({ action, id, data })
+            body: JSON.stringify({ action, id, data }),
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' } // 修正 CORS 關鍵
           });
           const json = await res.json();
           if (json.status === 'success') {
@@ -196,7 +205,8 @@
             return false;
           }
         } catch (e) {
-          showMsg('網路錯誤', '執行失敗，請檢查網路連線。');
+          console.error(e);
+          showMsg('網路錯誤', '無法連接到伺服器。\n請確認 GAS 網址是否正確且已設為「所有人」可存取。');
           return false;
         } finally {
           setLoading(false);
@@ -255,20 +265,19 @@
         </nav>
       );
 
-      // 大廳視圖
+      // 大廳視圖 (修正 Hook 錯誤的地方)
       const renderDashboard = () => {
         const approvedRecords = records.filter(r => r.status === 'approved');
         const latestStars = approvedRecords.slice(0, 6); 
 
-        const studentStats = useMemo(() => {
-          const stats = {};
-          approvedRecords.forEach(r => {
-            const key = `${r.classId}-${r.name}`;
-            if (!stats[key]) stats[key] = { classId: r.classId, name: r.name, count: 0 };
-            stats[key].count++;
-          });
-          return Object.values(stats).sort((a, b) => b.count - a.count).slice(0, 10);
-        }, [approvedRecords]);
+        // 移除 useMemo，直接計算，避免 React 報錯
+        const stats = {};
+        approvedRecords.forEach(r => {
+          const key = `${r.classId}-${r.name}`;
+          if (!stats[key]) stats[key] = { classId: r.classId, name: r.name, count: 0 };
+          stats[key].count++;
+        });
+        const studentStats = Object.values(stats).sort((a, b) => b.count - a.count).slice(0, 10);
 
         return (
           <div className="space-y-8 animate-bounce-in max-w-6xl mx-auto mt-6 px-4">
@@ -550,7 +559,7 @@
 
           {/* 訊息提示框 Modal */}
           <Modal isOpen={msgBox.show} onClose={() => setMsgBox({ ...msgBox, show: false })} title={msgBox.title}>
-            <p className="text-lg text-gray-700 font-bold text-center py-6">{msgBox.msg}</p>
+            <p className="text-lg text-gray-700 font-bold text-center py-6 whitespace-pre-wrap">{msgBox.msg}</p>
             <div className="flex gap-3 mt-2">
               {msgBox.onConfirm ? (
                 <>
