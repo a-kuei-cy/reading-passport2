@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>興嘉閱讀護照 | Excel 雲端寫入版</title>
+    <title>興嘉閱讀護照 | 數據統計版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -22,7 +22,7 @@
         .field-input:focus { border-color: #f59e0b; }
         .field-textarea { font-size: 1.3rem; line-height: 1.8; padding: 1.5rem !important; min-height: 350px; resize: none; }
         
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
@@ -52,6 +52,7 @@
             const [student, setStudent] = useState({ classId: '', name: '' });
             const [isFormOpen, setIsFormOpen] = useState(false);
             const [isEditMode, setIsEditMode] = useState(false);
+            const [isAllReviewsOpen, setIsAllReviewsOpen] = useState(false);
             
             const [slogan, setSlogan] = useState(() => localStorage.getItem('xj_slogan') || "讀萬卷書，行萬里路");
             const [sloganSub, setSloganSub] = useState(() => localStorage.getItem('xj_slogan_sub') || "興嘉小達人，讓我們一起探索書中的奇幻世界！");
@@ -83,7 +84,6 @@
 
             useEffect(() => { fetchData(); }, [fetchData]);
 
-            // 通用呼叫 GAS 函式
             const callGAS = async (action, id = null, data = null) => {
                 setLoading(true);
                 try {
@@ -100,7 +100,6 @@
                             setLoading(false);
                         }, 2000);
                     } else {
-                        // 延遲更新以確保 GAS 處理完成
                         setTimeout(() => { fetchData(); setLoading(false); }, 2000);
                     }
                 } catch (e) { 
@@ -128,7 +127,6 @@
                 XLSX.writeFile(workbook, `興嘉閱讀護照_${new Date().toLocaleDateString()}.xlsx`);
             };
 
-            // 匯入並「真正」寫入試算表
             const importFromExcel = (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
@@ -149,12 +147,10 @@
                             publisher: item['出版社'] || '',
                             pages: item['頁數'] || '',
                             review: item['心得內容'] || '',
-                            status: 'approved' // 匯入直接核准
+                            status: 'approved'
                         }));
 
                         if (confirm(`已解析 ${mappedData.length} 筆資料，即將批量寫入試算表並自動審核通過。確定嗎？`)) {
-                            // 呼叫 GAS 的批量匯入動作 (需 GAS 端支援此 action，若無則循環 call addRecord)
-                            // 為了保險起見，我們發送一個特殊的 action
                             await callGAS('importBatch', null, mappedData);
                             alert("批量匯入指令已發出！試算表正在更新中...");
                         }
@@ -162,7 +158,7 @@
                         alert("解析失敗，請確保 Excel 格式正確。");
                     }
                     setLoading(false);
-                    e.target.value = ""; // 清空 input
+                    e.target.value = ""; 
                 };
                 reader.readAsArrayBuffer(file);
             };
@@ -171,33 +167,47 @@
                 setStudent({ classId: '', name: '' });
                 setIsLoggedIn(false);
                 setView('home');
-                const s = localStorage.getItem('xj_slogan');
-                const ss = localStorage.getItem('xj_slogan_sub');
-                localStorage.clear();
-                if(s) localStorage.setItem('xj_slogan', s);
-                if(ss) localStorage.setItem('xj_slogan_sub', ss);
             };
 
+            // ========== 數據統計計算區 ==========
+            const approvedRecords = useMemo(() => {
+                return records.filter(r => String(getVal(r, 'status')).toLowerCase() === 'approved');
+            }, [records]);
+
+            // 1. 全校閱讀總冊數 & 2. 心得篇數 (兩者在此情境下皆等於已核准的紀錄總數)
+            const totalBooks = approvedRecords.length;
+            const totalReviews = approvedRecords.length;
+            
+            // 3. 參加學生數 (使用 Set 過濾重複的「班級+姓名」組合)
+            const totalStudents = useMemo(() => {
+                return new Set(approvedRecords.map(r => getVal(r, 'classId') + '_' + getVal(r, 'name'))).size;
+            }, [approvedRecords]);
+
+            // 排行榜
             const topStudents = useMemo(() => {
-                const approved = records.filter(r => String(getVal(r, 'status')).toLowerCase() === 'approved');
                 const counts = {};
-                approved.forEach(r => {
+                approvedRecords.forEach(r => {
                     const key = `${getVal(r, 'classId')}_${getVal(r, 'name')}`;
                     counts[key] = (counts[key] || 0) + 1;
                 });
                 return Object.entries(counts).map(([k, count]) => ({ classId: k.split('_')[0], name: k.split('_')[1], count }))
                     .sort((a, b) => b.count - a.count).slice(0, 10);
-            }, [records]);
+            }, [approvedRecords]);
 
+            // 年級統計
             const gradeStats = useMemo(() => {
                 const g = { "一年級":0, "二年級":0, "三年級":0, "四年級":0, "五年級":0, "六年級":0 };
-                records.filter(r => String(getVal(r, 'status')).toLowerCase() === 'approved').forEach(r => {
+                approvedRecords.forEach(r => {
                     const gId = String(getVal(r, 'classId'))[0];
                     const label = ["","一","二","三","四","五","六"][gId] + "年級";
                     if(g[label]!==undefined) g[label]++;
                 });
                 return Object.entries(g);
-            }, [records]);
+            }, [approvedRecords]);
+
+            // 最新心得 5 篇
+            const latestReviews = useMemo(() => approvedRecords.slice(-5).reverse(), [approvedRecords]);
+            // ====================================
 
             return (
                 <div className="min-h-screen pb-32">
@@ -215,6 +225,7 @@
                     <main className="max-w-6xl mx-auto p-4 md:p-8 space-y-6">
                         {view === 'home' && (
                             <div className="space-y-6 animate-in fade-in duration-500">
+                                {/* 標語區塊 */}
                                 <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-[3rem] p-12 text-center shadow-xl relative overflow-hidden">
                                     <h2 className="text-4xl md:text-5xl font-black text-white drop-shadow-lg mb-4">{slogan}</h2>
                                     <p className="text-white/90 font-bold text-xl">{sloganSub}</p>
@@ -223,7 +234,27 @@
                                     )}
                                 </div>
 
+                                {/* 新增：全校數據統計看板 */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div className="bg-white p-6 rounded-[2rem] border card-shadow flex flex-col items-center justify-center relative overflow-hidden">
+                                        <div className="absolute -right-4 -top-4 opacity-5"><Icon name="book" size={100}/></div>
+                                        <p className="text-slate-500 font-black text-sm mb-1 z-10">全校閱讀總冊數</p>
+                                        <p className="text-5xl font-black text-amber-500 z-10">{totalBooks}</p>
+                                    </div>
+                                    <div className="bg-white p-6 rounded-[2rem] border card-shadow flex flex-col items-center justify-center relative overflow-hidden">
+                                        <div className="absolute -right-4 -top-4 opacity-5"><Icon name="pen-tool" size={100}/></div>
+                                        <p className="text-slate-500 font-black text-sm mb-1 z-10">累積心得篇數</p>
+                                        <p className="text-5xl font-black text-indigo-500 z-10">{totalReviews}</p>
+                                    </div>
+                                    <div className="bg-white p-6 rounded-[2rem] border card-shadow flex flex-col items-center justify-center relative overflow-hidden">
+                                        <div className="absolute -right-4 -top-4 opacity-5"><Icon name="users" size={100}/></div>
+                                        <p className="text-slate-500 font-black text-sm mb-1 z-10">參加學生數</p>
+                                        <p className="text-5xl font-black text-green-500 z-10">{totalStudents}</p>
+                                    </div>
+                                </div>
+
                                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                    {/* 排行榜 */}
                                     <div className="lg:col-span-5 bg-white rounded-[2.5rem] p-8 border card-shadow">
                                         <h3 className="text-xl font-black flex items-center gap-2 mb-6"><Icon name="award" className="text-amber-400"/> 閱讀小達人榜</h3>
                                         <div className="space-y-3">
@@ -240,6 +271,7 @@
                                     </div>
 
                                     <div className="lg:col-span-7 flex flex-col gap-6">
+                                        {/* 年級統計 */}
                                         <div className="bg-white rounded-[2.5rem] p-8 border card-shadow">
                                             <h3 className="text-xl font-black mb-6 flex items-center gap-2"><Icon name="bar-chart-3" className="text-indigo-500"/> 各年級閱讀量</h3>
                                             <div className="grid grid-cols-2 gap-x-8 gap-y-6">
@@ -252,6 +284,25 @@
                                                     </div>
                                                 ))}
                                             </div>
+                                        </div>
+
+                                        {/* 最新 5 篇心得分享 & More 按鈕 */}
+                                        <div className="bg-white rounded-[2.5rem] p-8 border card-shadow flex-1 flex flex-col">
+                                            <h3 className="text-xl font-black mb-4 flex items-center gap-2"><Icon name="bookmark" className="text-rose-500"/> 最新心得分享</h3>
+                                            <div className="space-y-3 flex-1">
+                                                {latestReviews.map((r, i) => (
+                                                    <div key={i} onClick={()=>setDetail(r)} className="p-4 bg-rose-50 rounded-2xl border border-rose-100 cursor-pointer hover:shadow-md transition-all flex justify-between items-center">
+                                                        <div>
+                                                            <p className="font-black text-slate-800">《{getVal(r, 'bookTitle')}》</p>
+                                                            <p className="text-xs text-slate-400 font-bold">{mask(getVal(r, 'name'))} ({getVal(r, 'classId')})</p>
+                                                        </div>
+                                                        <Icon name="arrow-right" size={16} className="text-rose-300"/>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <button onClick={() => setIsAllReviewsOpen(true)} className="mt-4 w-full py-3 bg-slate-50 hover:bg-slate-100 border text-slate-500 font-black rounded-xl transition-all flex items-center justify-center gap-2">
+                                                其他 more... <Icon name="chevron-down" size={16}/>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -317,7 +368,6 @@
                                                 <input type="file" className="hidden" accept=".xlsx, .xls" onChange={importFromExcel}/>
                                             </label>
                                         </div>
-                                        <p className="text-xs text-slate-400 font-bold">提示：匯入後系統會自動將狀態設定為「已核准」並同步至 Google 試算表。</p>
                                     </div>
 
                                     <div className="flex bg-slate-200 p-1.5 rounded-2xl gap-1">
@@ -357,6 +407,25 @@
                         ))}
                     </nav>
 
+                    {/* All Reviews Modal (全校心得總覽) */}
+                    {isAllReviewsOpen && (
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+                            <div className="bg-white w-full max-w-5xl rounded-[3rem] p-8 md:p-10 max-h-[90vh] overflow-y-auto shadow-2xl relative custom-scrollbar">
+                                <button onClick={()=>setIsAllReviewsOpen(false)} className="absolute top-8 right-8 p-3 bg-slate-100 rounded-full hover:bg-rose-100 transition-all"><Icon name="x" size={24}/></button>
+                                <h3 className="text-3xl font-black mb-8 text-slate-800 flex items-center gap-3"><Icon name="library" size={32} className="text-amber-500"/> 全校心得總覽</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {approvedRecords.slice().reverse().map(r => (
+                                        <div key={getVal(r, 'id')} onClick={()=>setDetail(r)} className="p-5 bg-slate-50 rounded-2xl border cursor-pointer hover:border-amber-400 hover:shadow-md transition-all">
+                                            <p className="font-black text-slate-800 text-lg mb-1 truncate">《{getVal(r, 'bookTitle')}》</p>
+                                            <p className="text-sm text-slate-500 font-bold">{getVal(r, 'classId')} {mask(getVal(r, 'name'))}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 填寫/編輯表單 Modal */}
                     {isFormOpen && (
                         <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
                             <div className="bg-white w-full max-w-3xl rounded-[3rem] p-8 md:p-12 max-h-[90vh] overflow-y-auto shadow-2xl relative custom-scrollbar">
@@ -388,8 +457,9 @@
                         </div>
                     )}
 
+                    {/* 詳細內容查看 Modal (層級設為 z-[110] 確保蓋在全校總覽之上) */}
                     {detail && (
-                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4" onClick={()=>setDetail(null)}>
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[110] flex items-center justify-center p-4" onClick={()=>setDetail(null)}>
                             <div className="bg-white w-full max-w-xl rounded-[3rem] p-12 shadow-2xl" onClick={e=>e.stopPropagation()}>
                                 <div className="flex justify-between items-start mb-8">
                                     <div><h3 className="text-3xl font-black text-slate-800">《{getVal(detail, 'bookTitle')}》</h3><p className="text-lg font-black text-amber-500 mt-2">{getVal(detail, 'classId')} {mask(getVal(detail, 'name'))}</p></div>
@@ -406,7 +476,7 @@
                     {loading && (
                         <div className="fixed inset-0 bg-white/70 backdrop-blur-md z-[200] flex flex-col items-center justify-center">
                             <div className="w-20 h-20 border-8 border-amber-500 border-t-transparent rounded-full animate-spin mb-8"></div>
-                            <div className="font-black text-amber-500 text-lg tracking-widest animate-pulse">正在寫入資料同步試算表...</div>
+                            <div className="font-black text-amber-500 text-lg tracking-widest animate-pulse">連線讀取中...</div>
                         </div>
                     )}
                 </div>
