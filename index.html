@@ -60,8 +60,11 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // 🌟 這裡已經換成您剛剛建立的全新 GAS 網址了！
     const FIXED_GAS_URL = 'https://script.google.com/macros/s/AKfycbz8PuqxvXMnDOLizffDYbvjHkkUJc8wvfGlfAUcXSR-XVxawhnzOkmAmcgZ4ir8EzIt/exec';
+    
+    // ⭐⭐⭐ 老師密碼設定區 ⭐⭐⭐
+    // 如果您想修改老師後台密碼，只要把這裡的 '1234' 改成您想要的數字即可。
+    const ADMIN_PASSWORD = '1234'; 
 
     const Icon = ({ name, size = 18, className = "" }) => <i className={`fas fa-${name} ${className}`} style={{ fontSize: size }}></i>;
     const Card = ({ children, className = "" }) => <div className={`clean-box ${className}`}>{children}</div>;
@@ -101,7 +104,6 @@
 
     const App = () => {
       const gasUrl = FIXED_GAS_URL;
-      const [adminPwd, setAdminPwd] = useState(localStorage.getItem('adminPwd') || '');
       const [currentView, setCurrentView] = useState('dashboard');
       const [loading, setLoading] = useState(false);
       const [msgBox, setMsgBox] = useState({ show: false, title: '', msg: '', onConfirm: null });
@@ -219,7 +221,7 @@
               <Button variant={currentView === 'dashboard' ? 'primary' : 'outline'} className="py-2 px-3" onClick={() => setCurrentView('dashboard')}><Icon name="home" /> <span className="hidden sm:inline">大廳</span></Button>
               <Button variant={currentView === 'student' ? 'secondary' : 'outline'} className="py-2 px-3" onClick={() => setCurrentView('student')}><Icon name="user-astronaut" /> <span className="hidden sm:inline">我的</span></Button>
               <Button variant={currentView === 'admin' ? 'danger' : 'outline'} className="py-2 px-3" onClick={() => setCurrentView('admin')}><Icon name="magic" /> <span className="hidden sm:inline">老師</span></Button>
-              <Button variant={currentView === 'settings' ? 'primary' : 'outline'} className="py-2 px-3" onClick={() => setCurrentView('settings')}><Icon name="cog" /> <span className="inline">設定</span></Button>
+              {/* 已經隱藏設定按鈕 */}
             </div>
           </div>
         </nav>
@@ -364,8 +366,8 @@
               <div className="w-16 h-16 mx-auto bg-rose-100 text-rose-500 rounded-full flex items-center justify-center text-3xl mb-4">🔒</div>
               <h2 className="text-2xl font-black text-gray-800 mb-6">老師後台登入</h2>
               <input type="password" placeholder="請輸入管理員密碼" className="clean-input w-full px-4 py-3 mb-4 text-center text-lg tracking-widest" 
-                value={tempPwd} onChange={e => setTempPwd(e.target.value)} onKeyDown={(e) => { if(e.key === 'Enter') { if(tempPwd === adminPwd && adminPwd !== '') { setIsAdminAuth(true); setTempPwd(''); } else { showMsg('錯誤', '密碼不正確'); } } }}/>
-              <Button className="w-full text-lg" onClick={() => { if(tempPwd === adminPwd && adminPwd !== '') { setIsAdminAuth(true); setTempPwd(''); } else if(adminPwd === '') { showMsg('提示', '請先到「設定」設定密碼'); } else { showMsg('錯誤', '密碼不正確'); } }}>確認登入</Button>
+                value={tempPwd} onChange={e => setTempPwd(e.target.value)} onKeyDown={(e) => { if(e.key === 'Enter') { if(tempPwd === ADMIN_PASSWORD) { setIsAdminAuth(true); setTempPwd(''); } else { showMsg('錯誤', '密碼不正確'); } } }}/>
+              <Button className="w-full text-lg" onClick={() => { if(tempPwd === ADMIN_PASSWORD) { setIsAdminAuth(true); setTempPwd(''); } else { showMsg('錯誤', '密碼不正確'); } }}>確認登入</Button>
             </Card>
           </div>
         );
@@ -400,30 +402,6 @@
         );
       };
 
-      const renderSettings = () => (
-        <div className="max-w-2xl mx-auto mt-10 px-4 animate-bounce-in">
-          <Card className="p-8 bg-white">
-            <div className="flex items-center gap-3 mb-8 pb-4 border-b border-gray-100">
-              <div className="w-12 h-12 bg-gray-100 text-gray-600 rounded-xl flex items-center justify-center text-2xl"><Icon name="cog" /></div>
-              <div><h2 className="text-2xl font-black text-gray-800">系統設定</h2><p className="text-gray-500 text-sm font-bold">資料庫與安全設置</p></div>
-            </div>
-            <div className="space-y-6">
-              <div>
-                <label className="block font-black text-gray-700 mb-2 text-lg">🔗 Google Apps Script 網址</label>
-                <p className="text-sm text-blue-500 mb-2 font-bold">目前已將正確網址寫死在系統中，您不需要在此修改了。</p>
-                <input className="clean-input w-full px-4 py-3 font-mono text-sm bg-gray-100 text-gray-500 cursor-not-allowed" value={gasUrl} disabled />
-              </div>
-              <div>
-                <label className="block font-black text-gray-700 mb-2 text-lg">🔐 老師後台密碼</label>
-                <p className="text-sm text-gray-500 mb-2 font-bold">設定一組密碼，防止學生進入審核介面：</p>
-                <input type="text" className="clean-input w-full px-4 py-3" value={adminPwd} onChange={(e) => setAdminPwd(e.target.value)} placeholder="請輸入自訂密碼" />
-              </div>
-              <div className="pt-4"><Button className="w-full text-lg py-3" icon="save" onClick={() => { localStorage.setItem('adminPwd', adminPwd); showMsg('成功', '系統設定已儲存！'); }}>儲存密碼</Button></div>
-            </div>
-          </Card>
-        </div>
-      );
-
       return (
         <div className="min-h-screen">
           {loading && (
@@ -441,7 +419,6 @@
             {currentView === 'dashboard' && renderDashboard()}
             {currentView === 'student' && renderStudent()}
             {currentView === 'admin' && renderAdmin()}
-            {currentView === 'settings' && renderSettings()}
           </div>
 
           <Modal isOpen={msgBox.show} onClose={() => setMsgBox({ ...msgBox, show: false })} title={msgBox.title}>
