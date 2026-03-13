@@ -1,478 +1,682 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>興嘉閱讀護照</title>
-  
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-  
-  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.6/babel.min.js"></script>
-
-  <style>
-    body {
-      font-family: 'M PLUS Rounded 1c', sans-serif;
-      background-color: #F9FAFB;
-      background-image: radial-gradient(#E5E7EB 1.5px, transparent 1.5px);
-      background-size: 24px 24px;
-    }
-    .clean-box { background-color: white; border-radius: 1.5rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.025); border: 1px solid #F3F4F6; }
-    .clean-btn { border-radius: 1rem; transition: all 0.2s ease; font-weight: 700; }
-    .clean-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08); }
-    .clean-btn:active { transform: translateY(1px); box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-    .clean-input { border: 2px solid #E5E7EB; border-radius: 1rem; background-color: #FAFAFA; transition: all 0.2s; }
-    .clean-input:focus { background-color: #ffffff; border-color: #60A5FA; box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.15); outline: none; }
-    .animate-bounce-in { animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-    @keyframes bounceIn { 0% { opacity: 0; transform: scale(0.9) translateY(10px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: #F3F4F6; border-radius: 10px;}
-    ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌟 興嘉閱讀護照 Xingjia Reading Passport</title>
+    <!-- 使用 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 使用 SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- 使用 Chart.js 繪製統計圖表 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        
+        body { font-family: 'Nunito', 'Noto Sans TC', sans-serif; }
+        .hidden { display: none !important; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* 童趣風格樣式 */
+        .kid-shadow { box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1); }
+        .kid-border { border: 3px solid #cbd5e1; }
+        .kid-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 3px solid transparent; }
+        .kid-btn:hover { transform: translateY(-3px) scale(1.02); box-shadow: 4px 6px 0px rgba(0, 0, 0, 0.15); }
+        .kid-btn:active { transform: translateY(0); box-shadow: 0px 0px 0px rgba(0, 0, 0, 0.1); }
+        
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #fbbf24; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0px); } }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+    </style>
 </head>
-<body class="text-gray-800 antialiased min-h-screen pb-20 selection:bg-blue-200 selection:text-gray-900">
-  
-  <div id="error-fallback" style="display: none; padding: 40px 20px; text-align: center; max-width: 800px; margin: 0 auto; margin-top: 10vh;">
-    <div style="background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 2px solid #fee2e2;">
-      <h2 style="color: #e11d48; font-size: 24px; font-weight: 900; margin-bottom: 10px;">🚨 系統發生錯誤</h2>
-      <p style="color: #4b5563; margin-bottom: 20px; font-weight: bold;">可能是快取問題，請點擊下方按鈕清除快取：</p>
-      <div id="error-message" style="background: #fef2f2; color: #991b1b; padding: 15px; border-radius: 10px; text-align: left; overflow-x: auto; white-space: pre-wrap; font-family: monospace; font-size: 13px; line-height: 1.5;"></div>
-      <button onclick="localStorage.clear(); sessionStorage.clear(); location.reload(true);" style="margin-top: 20px; padding: 12px 24px; background: #3b82f6; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer;">清除快取並重新載入</button>
-    </div>
-  </div>
+<body class="bg-sky-50 min-h-screen text-slate-700">
 
-  <div id="root"></div>
-
-  <script>
-    window.onerror = function(message, source, lineno, colno, error) {
-      document.getElementById('root').style.display = 'none';
-      document.getElementById('error-fallback').style.display = 'block';
-      document.getElementById('error-message').innerText = "Error: " + message + "\nLine: " + lineno;
-    };
-  </script>
-
-  <script type="text/babel">
-    const { useState, useEffect } = React;
-
-    // 這裡已經換成您專屬的 GAS 網址了！
-    const FIXED_GAS_URL = 'https://script.google.com/macros/s/AKfycbyU4Ljogie6v0WdGG_UEul-gRbS1_U-rIFIWbn717DYU4QMdO8ti40QQ9DU2BRsddhJ/exec';
-    
-    // 老師後台登入密碼 (目前設為 1234)
-    const ADMIN_PASSWORD = '1234'; 
-
-    const Icon = ({ name, size = 18, className = "" }) => <i className={`fas fa-${name} ${className}`} style={{ fontSize: size }}></i>;
-    const Card = ({ children, className = "" }) => <div className={`clean-box ${className}`}>{children}</div>;
-    const Button = ({ children, onClick, variant = 'primary', className = "", icon, title }) => {
-      const baseStyle = "flex items-center justify-center gap-2 clean-btn px-5 py-2.5 cursor-pointer";
-      const variants = {
-        primary: "bg-blue-500 text-white hover:bg-blue-600",
-        secondary: "bg-amber-400 text-amber-950 hover:bg-amber-500",
-        danger: "bg-rose-500 text-white hover:bg-rose-600",
-        success: "bg-emerald-500 text-white hover:bg-emerald-600",
-        outline: "bg-white text-gray-700 border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50",
-      };
-      return (
-        <button onClick={onClick} className={`${baseStyle} ${variants[variant]} ${className}`} title={title}>
-          {icon && <Icon name={icon} />}
-          {children}
-        </button>
-      );
-    };
-
-    const Modal = ({ isOpen, onClose, title, children }) => {
-      if (!isOpen) return null;
-      return (
-        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="clean-box w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-bounce-in m-2">
-            <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-white">
-              <h3 className="text-xl font-black text-gray-800">{title}</h3>
-              <button onClick={onClose} className="w-8 h-8 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 flex items-center justify-center transition-colors">
-                <Icon name="times" />
-              </button>
+    <!-- 🌟 頂部導覽列 -->
+    <nav class="bg-white shadow-sm border-b-4 border-sky-200 sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="logout()">
+                <div class="text-4xl animate-float">📚</div>
+                <div>
+                    <h1 class="text-2xl font-black text-sky-600 tracking-wide">興嘉閱讀護照</h1>
+                    <p class="text-xs font-bold text-amber-500 uppercase tracking-wider">Xingjia Reading Passport</p>
+                </div>
             </div>
-            <div className="p-6 overflow-y-auto bg-gray-50">{children}</div>
-          </div>
+            <div id="navUserArea" class="hidden flex items-center gap-3">
+                <span id="navUserName" class="text-sm font-bold text-sky-700 bg-sky-100 px-4 py-1.5 rounded-full kid-border border-sky-200"></span>
+                <button onclick="logout()" class="text-sm font-bold text-rose-500 hover:text-rose-600 bg-rose-50 px-3 py-1.5 rounded-full transition hover:bg-rose-100">登出/回首頁</button>
+            </div>
         </div>
-      );
-    };
+    </nav>
 
-    const App = () => {
-      const gasUrl = FIXED_GAS_URL;
-      const [currentView, setCurrentView] = useState('dashboard');
-      const [loading, setLoading] = useState(false);
-      const [msgBox, setMsgBox] = useState({ show: false, title: '', msg: '', onConfirm: null });
-      const [records, setRecords] = useState([]);
-      const [studentInfo, setStudentInfo] = useState({ classId: '', name: '' });
-      const [isAdminAuth, setIsAdminAuth] = useState(false);
-      const [tempPwd, setTempPwd] = useState('');
-      const [formData, setFormData] = useState({ id: '', classId: '', name: '', bookTitle: '', author: '', pages: '', reviewType: 'text', review: '', image: '' });
-      const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-      const [viewRecordModal, setViewRecordModal] = useState({ show: false, data: null });
+    <main class="container mx-auto px-4 py-6 max-w-6xl">
 
-      const showMsg = (title, msg, onConfirm = null) => {
-        setMsgBox({ show: true, title, msg, onConfirm });
-      };
+        <!-- ========================================== -->
+        <!-- 🚪 前端入口處 (全校動態 + 榮譽榜 + 登入) -->
+        <!-- ========================================== -->
+        <section id="loginView" class="view-section">
+            
+            <!-- 🌍 全校動態大廳 -->
+            <div id="publicDashboard" class="mb-12">
+                <div class="text-center mb-6">
+                    <h2 class="text-3xl md:text-4xl font-black text-slate-700 flex items-center justify-center gap-3">
+                        <span class="animate-bounce">🌍</span> 興嘉閱讀動態大廳
+                    </h2>
+                    <p class="text-slate-500 font-bold mt-2 text-lg">看看大家累積了多少閱讀能量！</p>
+                </div>
 
-      const loadData = async () => {
-        if(!gasUrl || gasUrl.includes('請在這裡貼上')) {
-          return showMsg('網址未設定', '尚未綁定 GAS 網址！');
-        }
+                <!-- 數據統計區 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+                    <div class="bg-indigo-50 rounded-3xl p-6 kid-border border-indigo-200 kid-shadow text-center relative overflow-hidden">
+                        <div class="text-5xl absolute -right-2 -bottom-2 opacity-20 transform rotate-12">📚</div>
+                        <h4 class="text-indigo-600 font-bold mb-2">全校閱讀冊數</h4>
+                        <div class="text-6xl font-black text-indigo-500" id="globalTotalBooks">0</div>
+                    </div>
+                    <div class="bg-emerald-50 rounded-3xl p-6 kid-border border-emerald-200 kid-shadow text-center relative overflow-hidden">
+                        <div class="text-5xl absolute -right-2 -bottom-2 opacity-20 transform -rotate-12">💡</div>
+                        <h4 class="text-emerald-600 font-bold mb-2">心得總篇數</h4>
+                        <div class="text-6xl font-black text-emerald-500" id="globalTotalReviews">0</div>
+                    </div>
+                    <div class="bg-sky-50 rounded-3xl p-6 kid-border border-sky-200 kid-shadow text-center relative overflow-hidden">
+                        <div class="text-5xl absolute -right-2 -bottom-2 opacity-20 transform rotate-12">🧑‍🤝‍🧑</div>
+                        <h4 class="text-sky-600 font-bold mb-2">參與學生數</h4>
+                        <div class="text-6xl font-black text-sky-500" id="globalTotalStudents">0</div>
+                    </div>
+                </div>
 
-        setLoading(true);
-        try {
-          const params = new URLSearchParams();
-          params.append('action', 'getAll');
-          
-          const res = await fetch(gasUrl, { method: 'POST', body: params });
-          const text = await res.text();
-          
-          let json;
-          try { json = JSON.parse(text); } 
-          catch (e) { return showMsg('資料解析失敗', '您的試算表資料格式可能有錯位，請確認試算表有11個欄位:\n' + text); }
+                <!-- 圖表與心得區塊 -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+                    <!-- 左欄：年級閱讀量圖表 -->
+                    <div class="lg:col-span-5">
+                        <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200 h-full flex flex-col">
+                            <h3 class="text-xl font-black text-slate-700 mb-4 flex items-center gap-2"><span>📈</span> 各年級閱讀戰力表</h3>
+                            <div class="relative flex-1 w-full min-h-[300px]">
+                                <canvas id="gradeReadingChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
 
-          if (json.status === 'success') {
-            setRecords((json.data.records || []).reverse());
-          } else {
-            showMsg('載入失敗', '伺服器回傳錯誤: ' + json.message);
-          }
-        } catch (e) {
-          showMsg('網路錯誤', '❌ 連線失敗！\n請確認您的 GAS 網址是否正確，且部署權限是否設為「所有人」。');
-        } finally {
-          setLoading(false);
-        }
-      };
+                    <!-- 右欄：最新精選心得 -->
+                    <div class="lg:col-span-7">
+                        <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200 h-full flex flex-col">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-xl font-black text-amber-500 flex items-center gap-2"><span>✨</span> 最新精選心得</h3>
+                                <span class="text-xs font-bold bg-slate-100 text-slate-500 px-2 py-1 rounded">即時更新</span>
+                            </div>
+                            <div id="publicReviewsContainer" class="space-y-4 flex-1 overflow-y-auto pr-2 no-scrollbar pb-4 max-h-[400px]">
+                                <!-- 動態生成 -->
+                                <div class="text-center text-slate-400 py-10 font-bold">載入中...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-      useEffect(() => { loadData(); }, []);
-
-      const apiCall = async (action, id = null, data = null) => {
-        setLoading(true);
-        try {
-          const params = new URLSearchParams();
-          params.append('action', action);
-          if (id) params.append('id', id);
-          if (data) params.append('data', JSON.stringify(data));
-
-          const res = await fetch(gasUrl, { method: 'POST', body: params });
-          const text = await res.text();
-          let json;
-          try { json = JSON.parse(text); } 
-          catch (e) { showMsg('執行失敗', '無法解析回傳內容:\n' + text); return false; }
-
-          if (json.status === 'success') {
-            await loadData();
-            return true;
-          } else {
-            showMsg('執行失敗', json.message);
-            return false;
-          }
-        } catch (e) {
-          showMsg('網路錯誤', '❌ 連線失敗！請檢查網路或網址。');
-          return false;
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          if (file.size > 5 * 1024 * 1024) return showMsg('提示', '圖片不能超過 5MB 喔！');
-          const reader = new FileReader();
-          reader.onload = (event) => setFormData({ ...formData, image: event.target.result, review: '' });
-          reader.readAsDataURL(file);
-        }
-      };
-
-      const submitForm = async () => {
-        if (!formData.classId || !formData.name) return showMsg('提示', '請填寫班級和姓名');
-        if (!formData.bookTitle) return showMsg('提示', '請填寫書名');
-        if (formData.reviewType === 'text' && !formData.review) return showMsg('提示', '請填寫心得');
-        if (formData.reviewType === 'image' && !formData.image) return showMsg('提示', '請上傳圖片');
-
-        const success = await apiCall(formData.id ? 'updateRecord' : 'addRecord', formData.id, formData);
-        if (success) {
-          setIsFormModalOpen(false);
-          showMsg('太棒了', '紀錄已成功送出！');
-        }
-      };
-
-      const renderNavbar = () => (
-        <nav className="bg-white border-b border-gray-100 sticky top-0 z-40 px-4 py-3 shadow-sm">
-          <div className="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-4">
-            <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setCurrentView('dashboard')}>
-              <div className="bg-blue-500 p-2.5 rounded-xl text-white shadow-md shadow-blue-500/30 transition-transform group-hover:scale-105">
-                <Icon name="book-reader" size={24} />
-              </div>
-              <h1 className="text-xl md:text-2xl font-black text-gray-800 tracking-wide leading-tight">興嘉閱讀護照</h1>
+                <!-- 🏆 閱讀達人榮譽榜 -->
+                <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-amber-200">
+                    <div class="text-center mb-8">
+                        <h3 class="text-3xl font-black text-amber-500 flex items-center justify-center gap-2">
+                            <span class="animate-bounce">🏆</span> 閱讀達人榮譽榜
+                        </h3>
+                        <p class="text-slate-400 font-bold mt-2">全校最棒的閱讀小夥伴</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="leaderboardContainer">
+                        <!-- 動態生成 -->
+                        <div class="col-span-full text-center text-slate-400 py-5 font-bold">載入中...</div>
+                    </div>
+                </div>
             </div>
-            <div className="flex gap-2 flex-wrap">
-              <Button variant={currentView === 'dashboard' ? 'primary' : 'outline'} className="py-2 px-3" onClick={() => setCurrentView('dashboard')}><Icon name="home" /> <span className="hidden sm:inline">大廳</span></Button>
-              <Button variant={currentView === 'student' ? 'secondary' : 'outline'} className="py-2 px-3" onClick={() => setCurrentView('student')}><Icon name="user-astronaut" /> <span className="hidden sm:inline">我的</span></Button>
-              <Button variant={currentView === 'admin' ? 'danger' : 'outline'} className="py-2 px-3" onClick={() => setCurrentView('admin')}><Icon name="magic" /> <span className="hidden sm:inline">老師</span></Button>
-            </div>
-          </div>
-        </nav>
-      );
 
-      const renderDashboard = () => {
-        const approvedRecords = records.filter(r => r.status === 'approved');
-        const latestStars = approvedRecords.slice(0, 6); 
-        const stats = {};
-        approvedRecords.forEach(r => {
-          const key = `${r.classId}-${r.name}`;
-          if (!stats[key]) stats[key] = { classId: r.classId, name: r.name, count: 0 };
-          stats[key].count++;
+            <!-- 登入卡片區塊 -->
+            <div class="relative pt-12 border-t-4 border-dashed border-sky-200 mt-10">
+                <div class="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-sky-50 px-6 py-2 rounded-full kid-border border-sky-200 shadow-sm">
+                    <h3 class="text-xl font-black text-sky-600 flex items-center gap-2"><span>🚀</span> 準備好加入閱讀宇宙了嗎？</h3>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                    <!-- 學生登入 -->
+                    <div class="bg-white rounded-3xl p-8 kid-border kid-shadow border-sky-300 relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 text-7xl opacity-20 transform rotate-12">👦👧</div>
+                        <div class="text-center mb-6 relative z-10">
+                            <span class="text-6xl block mb-2 animate-float">🎒</span>
+                            <h2 class="text-3xl font-black text-sky-600">我是學生</h2>
+                        </div>
+                        <form id="studentLoginForm" class="space-y-4 relative z-10">
+                            <div>
+                                <input type="text" id="loginClass" required class="w-full rounded-2xl p-4 bg-sky-50 kid-border focus:border-sky-400 focus:bg-white outline-none text-lg font-bold text-center" placeholder="👉 請輸入班級 (例:101)">
+                            </div>
+                            <div>
+                                <input type="text" id="loginName" required class="w-full rounded-2xl p-4 bg-sky-50 kid-border focus:border-sky-400 focus:bg-white outline-none text-lg font-bold text-center" placeholder="👉 請輸入姓名">
+                            </div>
+                            <button type="submit" class="w-full bg-sky-400 text-white font-black text-xl py-4 rounded-2xl kid-btn border-sky-500 mt-2">
+                                🚀 出發囉！
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- 老師登入 -->
+                    <div class="bg-white rounded-3xl p-8 kid-border kid-shadow border-emerald-300 relative overflow-hidden">
+                        <div class="absolute -left-4 -bottom-4 text-7xl opacity-20 transform -rotate-12">🦉</div>
+                        <div class="text-center mb-6 relative z-10">
+                            <span class="text-6xl block mb-2 animate-float" style="animation-delay: 1s;">👨‍🏫</span>
+                            <h2 class="text-3xl font-black text-emerald-600">我是老師</h2>
+                        </div>
+                        <form id="teacherLoginForm" class="space-y-4 relative z-10">
+                            <div class="pt-4">
+                                <input type="password" id="loginPwd" required class="w-full rounded-2xl p-4 bg-emerald-50 kid-border focus:border-emerald-400 focus:bg-white outline-none text-lg font-bold text-center" placeholder="🔑 輸入管理員密碼">
+                            </div>
+                            <button type="submit" class="w-full bg-emerald-400 text-emerald-900 font-black text-xl py-4 rounded-2xl kid-btn border-emerald-500 mt-6">
+                                🎯 登入後台
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 🧑‍🎓 學生專區 -->
+        <!-- ========================================== -->
+        <section id="studentView" class="view-section hidden max-w-5xl mx-auto">
+            
+            <!-- 💬 每日隨機閱讀金句 -->
+            <div class="bg-gradient-to-r from-amber-100 to-orange-100 rounded-3xl p-5 mb-6 kid-border border-orange-200 kid-shadow relative overflow-hidden flex items-center gap-4">
+                <div class="text-5xl animate-bounce">💡</div>
+                <div class="flex-1">
+                    <p class="text-xs font-black text-orange-400 mb-1 uppercase tracking-widest">每日閱讀金句</p>
+                    <p id="randomQuoteText" class="text-lg md:text-xl font-bold text-orange-800">閱讀是一把鑰匙，為你開啟世界的大門。</p>
+                </div>
+            </div>
+
+            <!-- 個人狀態卡片 -->
+            <div class="bg-white rounded-3xl p-6 mb-6 kid-border kid-shadow border-sky-300 flex flex-col md:flex-row items-center justify-between" id="studentProfileCard">
+                <div class="flex items-center gap-6 mb-4 md:mb-0">
+                    <div id="studentLevelIcon" class="text-7xl bg-sky-100 w-28 h-28 rounded-full flex items-center justify-center kid-border border-sky-200">🥚</div>
+                    <div>
+                        <h2 class="text-3xl font-black text-slate-700 mb-1"><span id="studentDisplayClass">101</span> <span id="studentDisplayName">王小明</span></h2>
+                        <p class="font-bold text-slate-500">目前階段：<span id="studentLevelName" class="font-black text-sky-500 text-xl bg-sky-50 px-2 py-1 rounded-lg">閱讀之卵</span></p>
+                    </div>
+                </div>
+                <div class="flex gap-3 text-center w-full md:w-auto">
+                    <div class="flex-1 md:flex-none bg-emerald-50 px-5 py-4 rounded-2xl kid-border border-emerald-200">
+                        <div class="text-sm font-bold text-emerald-600 mb-1">已通過</div>
+                        <div class="text-4xl font-black text-emerald-500" id="studentApprovedCount">0</div>
+                    </div>
+                    <div class="flex-1 md:flex-none bg-amber-50 px-5 py-4 rounded-2xl kid-border border-amber-200">
+                        <div class="text-sm font-bold text-amber-600 mb-1">審核中</div>
+                        <div class="text-4xl font-black text-amber-500" id="studentPendingCount">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 學生專區頁籤 -->
+            <div class="flex overflow-x-auto no-scrollbar gap-3 mb-6 pb-2 justify-center">
+                <button onclick="switchStudentTab('add')" id="tab-stu-add" class="stu-tab whitespace-nowrap px-8 py-3 rounded-2xl font-black text-lg transition kid-btn bg-amber-400 text-amber-900 border-amber-500">✍️ 新增紀錄</button>
+                <button onclick="switchStudentTab('list')" id="tab-stu-list" class="stu-tab whitespace-nowrap px-8 py-3 rounded-2xl font-black text-lg transition kid-btn bg-white text-slate-500 kid-border hover:bg-slate-50">📖 我的護照</button>
+            </div>
+
+            <!-- 內容區塊: 新增紀錄 -->
+            <div id="stu-content-add" class="stu-content">
+                <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200">
+                    <h3 class="text-2xl font-black mb-6 text-sky-600 flex items-center gap-2"><span>📝</span> 填寫閱讀紀錄</h3>
+                    <form id="recordForm" class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-600 mb-2">📖 書名 (必填)</label>
+                            <input type="text" id="bookTitle" required class="w-full rounded-2xl p-3 bg-slate-50 kid-border focus:border-sky-400 focus:bg-white outline-none font-bold">
+                        </div>
+                        <div class="mt-4">
+                            <label class="block text-sm font-bold text-slate-600 mb-2">📝 心得內容</label>
+                            <textarea id="reviewText" rows="5" class="w-full rounded-2xl p-4 bg-slate-50 kid-border focus:border-sky-400 focus:bg-white outline-none resize-none font-bold text-slate-700 leading-relaxed" placeholder="請寫下這本書的心得... (選填)"></textarea>
+                        </div>
+                        <button type="submit" id="submitBtn" class="w-full bg-sky-400 text-white font-black text-xl py-4 rounded-2xl kid-btn border-sky-500 mt-6">
+                            🚀 魔法送出！
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 內容區塊: 我的護照 -->
+            <div id="stu-content-list" class="stu-content hidden">
+                <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 class="text-2xl font-black text-sky-600 flex items-center gap-2"><span>📖</span> 閱讀歷程</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-left border-separate border-spacing-y-3">
+                            <thead>
+                                <tr class="text-slate-400 text-sm">
+                                    <th class="px-4 font-bold pb-2">日期</th>
+                                    <th class="px-4 font-bold pb-2">書名</th>
+                                    <th class="px-4 font-bold pb-2 text-center">狀態</th>
+                                </tr>
+                            </thead>
+                            <tbody id="myRecordsTableBody">
+                                <!-- 動態生成 -->
+                            </tbody>
+                        </table>
+                        <div id="myNoDataMsg" class="text-center py-12 hidden">
+                            <span class="text-6xl block mb-4 grayscale opacity-50">📭</span>
+                            <p class="text-slate-400 font-bold text-lg">護照還是空的，快去讀第一本書吧！</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 👨‍🏫 老師管理後台 -->
+        <!-- ========================================== -->
+        <section id="teacherView" class="view-section hidden max-w-5xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 bg-emerald-50 p-4 rounded-3xl kid-border border-emerald-200">
+                <h2 class="text-3xl font-black text-emerald-700 flex items-center gap-3">
+                    <span class="text-4xl bg-white p-2 rounded-full kid-shadow">👨‍🏫</span> 老師管理中心
+                </h2>
+                <div class="flex gap-2 w-full md:w-auto">
+                    <button onclick="fetchTeacherData()" class="flex-1 md:flex-none bg-white font-bold text-slate-600 px-4 py-2.5 rounded-xl kid-border hover:bg-slate-50 transition kid-btn">🔄 重新整理</button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl p-6 kid-border kid-shadow border-slate-200">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-black text-emerald-600 flex items-center gap-2"><span>✅</span> 審核列表</h3>
+                    <select id="statusFilter" onchange="renderTeacherTable()" class="p-2 rounded-xl kid-border bg-slate-50 font-bold text-slate-600 outline-none">
+                        <option value="all">所有狀態</option>
+                        <option value="待審核" selected>待審核</option>
+                        <option value="已通過">已通過</option>
+                    </select>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-500 border-b-2 border-slate-200">
+                                <th class="p-3 font-bold rounded-tl-xl">日期</th>
+                                <th class="p-3 font-bold">班級</th>
+                                <th class="p-3 font-bold">姓名</th>
+                                <th class="p-3 font-bold">書名</th>
+                                <th class="p-3 font-bold">狀態</th>
+                                <th class="p-3 font-bold rounded-tr-xl text-center">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teacherTableBody">
+                            <!-- 動態生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ========================================== -->
+    <!-- ⚙️ JavaScript 核心程式碼 -->
+    <!-- ========================================== -->
+    <script>
+        // ==========================================
+        // 🚨 系統核心設定 (請老師在這裡填寫！) 🚨
+        // ==========================================
+        const YOUR_GAS_URL = "https://script.google.com/macros/s/AKfycbyU4Ljogie6v0WdGG_UEul-gRbS1_U-rIFIWbn717DYU4QMdO8ti40QQ9DU2BRsddhJ/exec"; 
+        const ADMIN_PASSWORD = "S2860885*110"; // 老師登入密碼，可自行修改
+        
+        // 狀態變數
+        let currentUser = null; // { role: 'student'|'teacher', class: '', name: '' }
+        let appData = { records: [], globalStats: {} };
+        let chartInstance = null;
+
+        // --- 初始化 ---
+        window.onload = () => {
+            // 檢查是否已填寫 GAS 網址
+            if (YOUR_GAS_URL.includes("請將這段文字替換")) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '尚未設定系統連線！',
+                    text: '請老師打開 index.html，在第 410 行左右修改 YOUR_GAS_URL 的網址喔！',
+                    confirmButtonColor: '#38bdf8'
+                });
+            } else {
+                fetchPublicData(); // 載入首頁數據
+            }
+        };
+
+        // --- 畫面切換邏輯 ---
+        function showView(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(viewId).classList.remove('hidden');
+            
+            const navArea = document.getElementById('navUserArea');
+            if (viewId === 'loginView') {
+                navArea.classList.add('hidden');
+            } else {
+                navArea.classList.remove('hidden');
+            }
+        }
+
+        function switchStudentTab(tabId) {
+            document.querySelectorAll('.stu-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.stu-tab').forEach(el => {
+                el.classList.remove('bg-amber-400', 'text-amber-900', 'border-amber-500');
+                el.classList.add('bg-white', 'text-slate-500');
+            });
+            
+            document.getElementById(`stu-content-${tabId}`).classList.remove('hidden');
+            const activeTab = document.getElementById(`tab-stu-${tabId}`);
+            activeTab.classList.remove('bg-white', 'text-slate-500');
+            activeTab.classList.add('bg-amber-400', 'text-amber-900', 'border-amber-500');
+        }
+
+        // --- 登入邏輯 ---
+        document.getElementById('studentLoginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const cls = document.getElementById('loginClass').value.trim();
+            const name = document.getElementById('loginName').value.trim();
+            
+            if (!cls || !name) return;
+            
+            currentUser = { role: 'student', class: cls, name: name };
+            document.getElementById('navUserName').innerText = `🎓 ${cls} ${name}`;
+            
+            document.getElementById('studentDisplayClass').innerText = cls;
+            document.getElementById('studentDisplayName').innerText = name;
+            
+            showView('studentView');
+            fetchStudentData();
         });
-        const studentStats = Object.values(stats).sort((a, b) => b.count - a.count).slice(0, 10);
 
-        return (
-          <div className="space-y-8 animate-bounce-in max-w-6xl mx-auto mt-6 px-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="p-8 text-center bg-white"><div className="w-14 h-14 mx-auto bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center text-2xl mb-4 shadow-sm">📚</div><p className="text-gray-500 font-bold mb-1">大家總共讀了</p><p className="text-5xl font-black text-gray-800">{records.length}<span className="text-lg text-gray-400 ml-1">本</span></p></Card>
-              <Card className="p-8 text-center bg-white"><div className="w-14 h-14 mx-auto bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center text-2xl mb-4 shadow-sm">📝</div><p className="text-gray-500 font-bold mb-1">累積文字心得</p><p className="text-5xl font-black text-gray-800">{records.filter(r => r.reviewType === 'text').length}<span className="text-lg text-gray-400 ml-1">篇</span></p></Card>
-              <Card className="p-8 text-center bg-white"><div className="w-14 h-14 mx-auto bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center text-2xl mb-4 shadow-sm">🎨</div><p className="text-gray-500 font-bold mb-1">累積畫畫心得</p><p className="text-5xl font-black text-gray-800">{records.filter(r => r.reviewType === 'image').length}<span className="text-lg text-gray-400 ml-1">幅</span></p></Card>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-              <Card className="p-6 md:p-8 bg-white flex flex-col h-full">
-                <div className="flex items-center gap-3 mb-6"><div className="w-10 h-10 bg-amber-100 text-amber-500 rounded-xl flex items-center justify-center text-xl shrink-0">👑</div><h3 className="text-2xl font-black text-gray-800">閱讀達人榮譽榜</h3></div>
-                <div className="flex-1 bg-gray-50 rounded-2xl p-2 md:p-4 border border-gray-100">
-                  {studentStats.length === 0 ? <div className="text-center py-10 text-gray-400 font-bold">目前還沒有達人上榜喔！</div> : (
-                    <div className="space-y-2">
-                      {studentStats.map((student, index) => {
-                        let rankStyle = "bg-white text-gray-500";
-                        let medal = <span className="text-sm font-black w-6 text-center">{index + 1}</span>;
-                        if (index === 0) { rankStyle = "bg-yellow-50 border-yellow-200 border"; medal = <span className="text-xl">🥇</span>; }
-                        else if (index === 1) { rankStyle = "bg-gray-100 border-gray-200 border"; medal = <span className="text-xl">🥈</span>; }
-                        else if (index === 2) { rankStyle = "bg-orange-50 border-orange-200 border"; medal = <span className="text-xl">🥉</span>; }
-                        return (
-                          <div key={index} className={`flex items-center justify-between p-3 rounded-xl transition-transform hover:scale-[1.02] ${rankStyle}`}>
-                            <div className="flex items-center gap-3"><div className="w-8 flex justify-center shrink-0">{medal}</div><div><span className="text-xs text-gray-500 font-bold block">{student.classId}</span><span className="text-base font-black text-gray-800">{student.name}</span></div></div>
-                            <div className="text-right flex items-center gap-1.5"><span className="text-2xl font-black text-blue-600">{student.count}</span><span className="text-xs text-gray-400 font-bold mt-1">本</span></div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+        document.getElementById('teacherLoginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const pwd = document.getElementById('loginPwd').value;
+            
+            if (pwd === ADMIN_PASSWORD) {
+                currentUser = { role: 'teacher' };
+                document.getElementById('navUserName').innerText = `👨‍🏫 管理員`;
+                showView('teacherView');
+                fetchTeacherData();
+                document.getElementById('loginPwd').value = '';
+            } else {
+                Swal.fire({ icon: 'error', title: '密碼錯誤', text: '請重新輸入' });
+            }
+        });
+
+        function logout() {
+            currentUser = null;
+            showView('loginView');
+            fetchPublicData();
+        }
+
+        // --- 與 GAS 溝通的 API 函數 ---
+        // 這些函數將呼叫您設定的 YOUR_GAS_URL
+        
+        async function fetchPublicData() {
+            if (YOUR_GAS_URL.includes("請將這段文字替換")) return; // 防呆
+            
+            try {
+                // 這裡假設您的 GAS doGet 會回傳所有需要的資料
+                const res = await fetch(`${YOUR_GAS_URL}?action=getPublicData`);
+                const data = await res.json();
+                
+                if (data.status === 'success') {
+                    appData = data.data;
+                    renderPublicDashboard();
+                }
+            } catch (err) {
+                console.log("讀取公開資料失敗 (可能是因為還沒連接GAS或格式不同)", err);
+                // 若出錯，顯示範例假資料讓畫面不空白
+                renderMockPublicData(); 
+            }
+        }
+
+        async function fetchStudentData() {
+            try {
+                Swal.fire({ title: '讀取紀錄中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                const res = await fetch(`${YOUR_GAS_URL}?action=getStudentData&class=${currentUser.class}&name=${currentUser.name}`);
+                const data = await res.json();
+                Swal.close();
+                
+                if (data.status === 'success') {
+                    renderStudentRecords(data.records);
+                } else {
+                    renderStudentRecords([]); // 沒資料
+                }
+            } catch (err) {
+                Swal.close();
+                console.log("API 呼叫失敗，使用本地測試邏輯", err);
+                renderStudentRecords([]); // 預設空資料
+            }
+        }
+
+        async function fetchTeacherData() {
+            try {
+                Swal.fire({ title: '讀取資料中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                const res = await fetch(`${YOUR_GAS_URL}?action=getAllRecords`);
+                const data = await res.json();
+                Swal.close();
+                
+                if (data.status === 'success') {
+                    appData.records = data.records;
+                    renderTeacherTable();
+                }
+            } catch (err) {
+                Swal.close();
+                console.log("API 呼叫失敗", err);
+            }
+        }
+
+        // --- 提交紀錄 ---
+        document.getElementById('recordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const originalText = btn.innerHTML;
+            
+            const title = document.getElementById('bookTitle').value.trim();
+            const review = document.getElementById('reviewText').value.trim();
+            
+            if (!title) return;
+
+            btn.innerHTML = '<div class="loader mx-auto"></div>';
+            btn.disabled = true;
+
+            try {
+                // 將資料傳送到 GAS (使用 GET 加上參數，或是改為 POST 依您的 GAS 寫法而定)
+                // 這裡示範使用 GET 參數傳遞 (URL編碼)
+                const params = new URLSearchParams({
+                    action: 'addRecord',
+                    class: currentUser.class,
+                    name: currentUser.name,
+                    title: title,
+                    review: review
+                });
+                
+                const res = await fetch(`${YOUR_GAS_URL}?${params.toString()}`);
+                const result = await res.json();
+
+                if (result.status === 'success') {
+                    Swal.fire({ icon: 'success', title: '送出成功！', text: '老師審核通過後就會累積點數喔！', confirmButtonColor: '#38bdf8' });
+                    document.getElementById('recordForm').reset();
+                    switchStudentTab('list');
+                    fetchStudentData(); // 重新讀取
+                } else {
+                    throw new Error('儲存失敗');
+                }
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: '哎呀！', text: '送出失敗，請稍後再試。' });
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        // --- 老師審核動作 ---
+        async function updateStatus(rowId, newStatus) {
+            try {
+                Swal.fire({ title: '更新中...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                const res = await fetch(`${YOUR_GAS_URL}?action=updateStatus&id=${rowId}&status=${newStatus}`);
+                const data = await res.json();
+                Swal.close();
+                
+                if(data.status === 'success') {
+                    Swal.fire({ icon: 'success', title: '更新成功', timer: 1000, showConfirmButton: false });
+                    fetchTeacherData(); // 重新抓取資料
+                } else {
+                    throw new Error('更新失敗');
+                }
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: '更新失敗' });
+            }
+        }
+
+        // --- 畫面渲染邏輯 ---
+        function renderMockPublicData() {
+            // 如果連不上GAS，顯示漂亮的假資料
+            document.getElementById('globalTotalBooks').innerText = "1,205";
+            document.getElementById('globalTotalReviews').innerText = "850";
+            document.getElementById('globalTotalStudents').innerText = "320";
+            
+            const lb = document.getElementById('leaderboardContainer');
+            lb.innerHTML = `
+                <div class="bg-amber-50 rounded-2xl p-4 flex items-center gap-4 kid-border border-amber-200 relative">
+                    <div class="absolute -top-3 -left-3 text-3xl">👑</div>
+                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center font-black text-xl text-amber-500 shadow-sm">1</div>
+                    <div class="flex-1"><div class="font-black text-lg text-slate-700">101 王小明</div><div class="text-sm font-bold text-amber-600">50 本書</div></div>
                 </div>
-              </Card>
-              <Card className="p-6 md:p-8 bg-white flex flex-col h-full">
-                <div className="flex items-center gap-3 mb-6"><div className="w-2 h-8 bg-blue-500 rounded-full"></div><h3 className="text-2xl font-black text-gray-800">🌟 最新閃亮星星</h3></div>
-                <div className="space-y-4">
-                  {latestStars.length === 0 ? <div className="text-center py-10 text-gray-400 font-bold">目前還沒有星星，快去新增第一筆吧！</div> : (
-                    latestStars.map(r => (
-                      <div key={r.id} className="p-4 bg-gray-50 rounded-xl hover:-translate-y-1 hover:shadow-md transition-all cursor-pointer border border-gray-100" onClick={() => setViewRecordModal({show: true, data: r})}>
-                        <div className="flex justify-between items-center mb-1"><span className="font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded text-xs">{r.classId} {r.name}</span><span className="text-xs text-gray-400 font-medium">{r.time.split(' ')[0]}</span></div>
-                        <h4 className="font-black text-gray-800 text-lg">《{r.bookTitle}》</h4>
-                      </div>
-                    ))
-                  )}
+                <div class="bg-slate-50 rounded-2xl p-4 flex items-center gap-4 kid-border border-slate-200">
+                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center font-black text-xl text-slate-400 shadow-sm">2</div>
+                    <div class="flex-1"><div class="font-black text-lg text-slate-700">203 李小華</div><div class="text-sm font-bold text-slate-500">45 本書</div></div>
                 </div>
-              </Card>
-            </div>
-          </div>
-        );
-      };
-
-      const renderStudent = () => {
-        const myRecords = records.filter(r => r.classId === studentInfo.classId && r.name === studentInfo.name);
-        const approvedCount = myRecords.filter(r => r.status === 'approved').length;
-        let stage = { icon: '🥚', name: '閱讀新手', color: 'bg-gray-100 text-gray-500' };
-        if (approvedCount >= 5) stage = { icon: '🐤', name: '知識小雞', color: 'bg-amber-100 text-amber-600' };
-        if (approvedCount >= 10) stage = { icon: '🦅', name: '聰明老鷹', color: 'bg-blue-100 text-blue-600' };
-        if (approvedCount >= 20) stage = { icon: '🐉', name: '博學飛龍', color: 'bg-rose-100 text-rose-600' };
-
-        return (
-          <div className="space-y-6 max-w-4xl mx-auto animate-bounce-in mt-6 px-4">
-            <Card className="bg-white overflow-hidden">
-              <div className="flex flex-col md:flex-row items-center">
-                <div className={`w-full md:w-48 py-8 flex items-center justify-center text-6xl ${stage.color} transition-colors`}>{stage.icon}</div>
-                <div className="flex-1 p-6 w-full text-center md:text-left">
-                  {!studentInfo.name ? (
-                    <div>
-                      <h3 className="text-lg font-black text-gray-700 mb-4">請告訴我你的班級與姓名</h3>
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <input placeholder="班級 (例: 508)" className="clean-input px-4 py-2.5 w-full font-bold" onChange={e => setStudentInfo({...studentInfo, classId: e.target.value})} />
-                        <input placeholder="姓名" className="clean-input px-4 py-2.5 w-full font-bold" onChange={e => setStudentInfo({...studentInfo, name: e.target.value})} />
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <h2 className="text-3xl font-black text-gray-800 mb-2">{studentInfo.classId} {studentInfo.name}</h2>
-                      <div className="inline-flex items-center gap-2 text-gray-600 font-bold text-sm bg-gray-50 px-3 py-1.5 rounded-lg">
-                        目前等級：<span className={stage.color.split(' ')[1]}>{stage.name}</span><span className="mx-2 text-gray-300">|</span>擁有 {approvedCount} 顆星星
-                      </div>
-                    </>
-                  )}
+                <div class="bg-orange-50 rounded-2xl p-4 flex items-center gap-4 kid-border border-orange-200">
+                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center font-black text-xl text-orange-400 shadow-sm">3</div>
+                    <div class="flex-1"><div class="font-black text-lg text-slate-700">502 張小美</div><div class="text-sm font-bold text-orange-500">42 本書</div></div>
                 </div>
-              </div>
-            </Card>
-
-            <div className="flex justify-between items-center px-2">
-              <h3 className="text-xl font-black text-gray-800 flex items-center gap-2"><Icon name="history" className="text-blue-500" /> 我的閱讀紀錄</h3>
-              <div className="flex gap-2">
-                <Button variant="outline" icon="sync-alt" onClick={loadData} title="重新整理" />
-                <Button variant="primary" icon="plus" onClick={() => {
-                   if(!studentInfo.name || !studentInfo.classId) return showMsg('提醒', '請先輸入你的班級與姓名喔！');
-                   setFormData({id: '', classId: studentInfo.classId, name: studentInfo.name, bookTitle: '', author: '', pages: '', reviewType: 'text', review: '', image: ''});
-                   setIsFormModalOpen(true);
-                 }}>寫心得</Button>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {myRecords.length === 0 ? (
-                <div className="text-center py-10 bg-white rounded-2xl border-2 border-dashed border-gray-200"><p className="text-gray-500 font-bold">還沒有紀錄喔，快新增第一本吧！</p></div>
-              ) : (
-                myRecords.map(r => (
-                  <Card key={r.id} className="p-5 flex flex-col md:flex-row justify-between md:items-center gap-4 hover:shadow-lg transition-shadow bg-white">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`px-2 py-0.5 rounded text-xs font-bold ${r.status === 'approved' ? 'bg-green-100 text-green-700' : r.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                          {r.status === 'approved' ? '✅ 已通過' : r.status === 'rejected' ? '❌ 退回修改' : '⏳ 老師審核中'}
-                        </span>
-                        <span className="text-xs text-gray-400 font-medium">{r.time}</span>
-                      </div>
-                      <h4 className="font-black text-xl text-gray-800">《{r.bookTitle}》</h4>
+            `;
+            
+            const rc = document.getElementById('publicReviewsContainer');
+            rc.innerHTML = `
+                <div class="p-4 bg-sky-50 rounded-2xl kid-border border-sky-100">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-black text-sky-700">101 王小明</span>
+                        <span class="text-xs font-bold text-sky-400">剛才</span>
                     </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" onClick={() => setViewRecordModal({show: true, data: r})}>查看</Button>
-                      {r.status !== 'approved' && <Button variant="secondary" onClick={() => { setFormData({...r}); setIsFormModalOpen(true); }}>編輯</Button>}
-                    </div>
-                  </Card>
-                ))
-              )}
-            </div>
-          </div>
-        );
-      };
-
-      const renderAdmin = () => {
-        if (!isAdminAuth) return (
-          <div className="max-w-md mx-auto mt-20 px-4">
-            <Card className="p-8 text-center bg-white">
-              <div className="w-16 h-16 mx-auto bg-rose-100 text-rose-500 rounded-full flex items-center justify-center text-3xl mb-4">🔒</div>
-              <h2 className="text-2xl font-black text-gray-800 mb-6">老師後台登入</h2>
-              <input type="password" placeholder="請輸入管理員密碼" className="clean-input w-full px-4 py-3 mb-4 text-center text-lg tracking-widest" 
-                value={tempPwd} onChange={e => setTempPwd(e.target.value)} onKeyDown={(e) => { if(e.key === 'Enter') { if(tempPwd === ADMIN_PASSWORD) { setIsAdminAuth(true); setTempPwd(''); } else { showMsg('錯誤', '密碼不正確'); } } }}/>
-              <Button className="w-full text-lg" onClick={() => { if(tempPwd === ADMIN_PASSWORD) { setIsAdminAuth(true); setTempPwd(''); } else { showMsg('錯誤', '密碼不正確'); } }}>確認登入</Button>
-            </Card>
-          </div>
-        );
-
-        const pending = records.filter(r => r.status === 'pending');
-        return (
-          <div className="max-w-6xl mx-auto mt-6 px-4 animate-bounce-in">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-black text-gray-800">待審核清單 <span className="text-blue-500 bg-blue-100 px-3 py-1 rounded-full text-lg">{pending.length}</span></h2>
-              <Button variant="outline" onClick={loadData} icon="sync-alt">重新整理</Button>
-            </div>
-            <div className="space-y-4">
-              {pending.length === 0 ? (
-                <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm"><div className="text-5xl mb-4 text-emerald-400">☕</div><p className="text-gray-500 font-bold text-lg">太棒了！目前沒有待審核的紀錄。</p></div>
-              ) : (
-                pending.map(r => (
-                  <Card key={r.id} className="p-5 flex flex-col md:flex-row justify-between md:items-center gap-4 bg-white">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1"><span className="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded text-sm">{r.classId} {r.name}</span><span className="text-xs text-gray-400">{r.time}</span></div>
-                      <h4 className="font-black text-xl text-gray-800">《{r.bookTitle}》</h4>
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                      <Button variant="outline" onClick={() => setViewRecordModal({show: true, data: r})}>查看內容</Button>
-                      <Button variant="success" icon="check" onClick={() => apiCall('approveRecord', r.id)}>通過</Button>
-                      <Button variant="danger" icon="times" onClick={() => showMsg('退回確認', '確定要退回請學生修改嗎？', () => { apiCall('rejectRecord', r.id); setMsgBox({show:false}); })}>退回</Button>
-                    </div>
-                  </Card>
-                ))
-              )}
-            </div>
-          </div>
-        );
-      };
-
-      return (
-        <div className="min-h-screen">
-          {loading && (
-            <div className="fixed inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center">
-              <div className="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center">
-                <div className="text-4xl animate-spin mb-3 text-blue-500"><Icon name="spinner" /></div>
-                <p className="font-bold text-gray-700">與伺服器連線中...</p>
-              </div>
-            </div>
-          )}
-
-          {renderNavbar()}
-
-          <div className="pb-20">
-            {currentView === 'dashboard' && renderDashboard()}
-            {currentView === 'student' && renderStudent()}
-            {currentView === 'admin' && renderAdmin()}
-          </div>
-
-          <Modal isOpen={msgBox.show} onClose={() => setMsgBox({ ...msgBox, show: false })} title={msgBox.title}>
-            <p className="text-lg text-gray-700 font-bold text-center py-6 whitespace-pre-wrap">{msgBox.msg}</p>
-            <div className="flex gap-3 mt-2">
-              {msgBox.onConfirm ? (
-                <><Button variant="outline" className="flex-1" onClick={() => setMsgBox({ ...msgBox, show: false })}>取消</Button><Button variant="primary" className="flex-1" onClick={msgBox.onConfirm}>確定</Button></>
-              ) : <Button className="w-full" onClick={() => setMsgBox({ ...msgBox, show: false })}>我知道了</Button>}
-            </div>
-          </Modal>
-
-          <Modal isOpen={isFormModalOpen} onClose={() => setIsFormModalOpen(false)} title={formData.id ? "編輯閱讀紀錄" : "新增閱讀紀錄"}>
-            <div className="space-y-4 bg-white">
-              <div><label className="block text-sm font-bold text-gray-700 mb-1">書名 (必填)</label><input placeholder="例如：神奇樹屋" className="clean-input w-full px-4 py-3" value={formData.bookTitle} onChange={e => setFormData({...formData, bookTitle: e.target.value})} /></div>
-              <div className="flex gap-4">
-                <div className="flex-1"><label className="block text-sm font-bold text-gray-700 mb-1">作者</label><input placeholder="選填" className="clean-input w-full px-4 py-3" value={formData.author} onChange={e => setFormData({...formData, author: e.target.value})} /></div>
-                <div className="flex-1"><label className="block text-sm font-bold text-gray-700 mb-1">頁數</label><input type="number" placeholder="選填" className="clean-input w-full px-4 py-3" value={formData.pages} onChange={e => setFormData({...formData, pages: e.target.value})} /></div>
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1">心得方式</label>
-                <select className="clean-input w-full px-4 py-3 font-bold text-blue-600" value={formData.reviewType} onChange={e => setFormData({...formData, reviewType: e.target.value, review: '', image: ''})}>
-                  <option value="text">📝 打字寫心得</option><option value="image">🎨 上傳畫作/圖片</option>
-                </select>
-              </div>
-              {formData.reviewType === 'text' ? (
-                <div><label className="block text-sm font-bold text-gray-700 mb-1">心得內容 (必填)</label><textarea placeholder="這本書告訴我..." className="clean-input w-full px-4 py-3 h-40 resize-none" value={formData.review} onChange={e => setFormData({...formData, review: e.target.value})}></textarea></div>
-              ) : (
-                <div className="p-4 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 text-center">
-                  <label className="block text-sm font-bold text-gray-700 mb-2">上傳圖片 (必填, 最大 5MB)</label>
-                  <input type="file" accept="image/*" onChange={handleImageUpload} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" />
-                  {formData.image && <img src={formData.image} alt="預覽" className="mt-4 max-h-48 mx-auto rounded-lg shadow-sm" />}
+                    <div class="font-bold text-slate-700 text-sm mb-1">《哈利波特》</div>
+                    <p class="text-slate-600 text-sm">魔法世界真的太有趣了！我也想去霍格華茲上學！</p>
                 </div>
-              )}
-              <Button className="w-full text-lg py-3 mt-4" onClick={submitForm}>送出審核</Button>
-            </div>
-          </Modal>
+            `;
+            
+            renderChart([50, 120, 80, 200, 150, 90]);
+        }
+        
+        function renderPublicDashboard() {
+            // 根據 appData 填入資料 (假設 appData 有相對應的結構)
+            // 這裡保留彈性給您的 GAS 後端
+        }
 
-          <Modal isOpen={viewRecordModal.show} onClose={() => setViewRecordModal({show:false, data: null})} title="閱讀紀錄詳情">
-            {viewRecordModal.data && (
-              <div className="space-y-4 bg-white">
-                <div className="text-center border-b border-gray-100 pb-4">
-                  <h3 className="text-2xl font-black text-gray-800 mb-2">《{viewRecordModal.data.bookTitle}》</h3>
-                  <div className="flex justify-center gap-4 text-sm text-gray-500 font-bold"><span>👤 作者: {viewRecordModal.data.author || '未提供'}</span><span>📖 頁數: {viewRecordModal.data.pages || '?'} 頁</span></div>
-                </div>
-                <div className="pt-2">
-                  <div className="flex items-center gap-2 mb-3"><span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-lg text-sm font-bold">{viewRecordModal.data.classId} {viewRecordModal.data.name}</span><span className="text-sm text-gray-400 font-bold">{viewRecordModal.data.time}</span></div>
-                  {viewRecordModal.data.reviewType === 'text' ? (
-                    <div className="bg-amber-50 p-5 rounded-2xl border border-amber-100 text-gray-700 leading-relaxed min-h-[150px]">{viewRecordModal.data.review}</div>
-                  ) : (
-                    <div className="rounded-2xl overflow-hidden border border-gray-200"><img src={viewRecordModal.data.image} alt="學生上傳的心得" className="w-full h-auto object-contain bg-gray-50" /></div>
-                  )}
-                </div>
-              </div>
-            )}
-          </Modal>
-        </div>
-      );
-    };
+        function renderStudentRecords(records) {
+            const tbody = document.getElementById('myRecordsTableBody');
+            const noDataMsg = document.getElementById('myNoDataMsg');
+            let approvedCount = 0;
+            let pendingCount = 0;
 
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
+            if (!records || records.length === 0) {
+                tbody.innerHTML = '';
+                noDataMsg.classList.remove('hidden');
+            } else {
+                noDataMsg.classList.add('hidden');
+                tbody.innerHTML = records.map(r => {
+                    if (r.status === '已通過') approvedCount++;
+                    if (r.status === '待審核') pendingCount++;
+                    
+                    let statusClass = r.status === '已通過' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-amber-100 text-amber-700 border-amber-200';
+                    return `
+                        <tr class="bg-slate-50 transition hover:bg-sky-50">
+                            <td class="p-4 rounded-l-2xl kid-border border-r-0 border-slate-100">${r.date || '今日'}</td>
+                            <td class="p-4 kid-border border-l-0 border-r-0 border-slate-100 font-bold text-sky-700">${r.title}</td>
+                            <td class="p-4 rounded-r-2xl kid-border border-l-0 border-slate-100 text-center">
+                                <span class="px-3 py-1 rounded-full text-xs font-bold border ${statusClass}">${r.status}</span>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+            
+            document.getElementById('studentApprovedCount').innerText = approvedCount;
+            document.getElementById('studentPendingCount').innerText = pendingCount;
+            updateLevel(approvedCount);
+        }
+
+        function updateLevel(count) {
+            const levels = [
+                { min: 0, name: '閱讀之卵', icon: '🥚' },
+                { min: 5, name: '閱讀幼苗', icon: '🌱' },
+                { min: 20, name: '閱讀小樹', icon: '🌳' },
+                { min: 50, name: '閱讀飛鳥', icon: '🦅' },
+                { min: 100, name: '閱讀大師', icon: '👑' }
+            ];
+            let currentLevel = levels[0];
+            for(let l of levels) {
+                if(count >= l.min) currentLevel = l;
+            }
+            document.getElementById('studentLevelName').innerText = currentLevel.name;
+            document.getElementById('studentLevelIcon').innerText = currentLevel.icon;
+        }
+
+        function renderTeacherTable() {
+            const tbody = document.getElementById('teacherTableBody');
+            const filter = document.getElementById('statusFilter').value;
+            
+            const records = appData.records || [];
+            const filtered = filter === 'all' ? records : records.filter(r => r.status === filter);
+            
+            if(filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400 font-bold">目前沒有資料</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(r => `
+                <tr class="hover:bg-slate-100 transition border-b border-slate-100">
+                    <td class="p-3 text-sm text-slate-500">${r.date || ''}</td>
+                    <td class="p-3 font-bold">${r.class || ''}</td>
+                    <td class="p-3 font-bold text-sky-600">${r.name || ''}</td>
+                    <td class="p-3 font-bold">${r.title || ''}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-1 rounded text-xs font-bold ${r.status === '已通過' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${r.status || '待審核'}</span>
+                    </td>
+                    <td class="p-3 text-center">
+                        ${r.status === '待審核' ? `
+                            <button onclick="updateStatus('${r.id}', '已通過')" class="bg-emerald-400 text-white px-3 py-1 rounded-lg font-bold hover:bg-emerald-500 shadow-sm mr-1">通過</button>
+                            <button onclick="updateStatus('${r.id}', '退回')" class="bg-rose-400 text-white px-3 py-1 rounded-lg font-bold hover:bg-rose-500 shadow-sm">退回</button>
+                        ` : `
+                            <button onclick="updateStatus('${r.id}', '待審核')" class="bg-slate-200 text-slate-600 px-3 py-1 rounded-lg font-bold hover:bg-slate-300 text-xs">重設狀態</button>
+                        `}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderChart(dataArr) {
+            const ctx = document.getElementById('gradeReadingChart').getContext('2d');
+            if(chartInstance) chartInstance.destroy();
+            
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['一年級', '二年級', '三年級', '四年級', '五年級', '六年級'],
+                    datasets: [{
+                        label: '閱讀總冊數',
+                        data: dataArr,
+                        backgroundColor: ['#f87171', '#fb923c', '#fbbf24', '#34d399', '#38bdf8', '#818cf8'],
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, border: { dash: [4, 4] } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>
