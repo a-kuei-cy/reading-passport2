@@ -5,27 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>興嘉閱讀護照</title>
   
-  <!-- 載入 Tailwind CSS (排版與樣式) -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- 載入 FontAwesome (圖示) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- 載入 Google 字體 -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+  <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css)">
+  <link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
+  <link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
+  <link href="[https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&display=swap](https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&display=swap)" rel="stylesheet">
   
-  <!-- 載入 React (核心框架) -->
-  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.6/babel.min.js"></script>
+  <script crossorigin src="[https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js](https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js)"></script>
+  <script crossorigin src="[https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js](https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js)"></script>
+  <script src="[https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.6/babel.min.js](https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.6/babel.min.js)"></script>
 
   <style>
-    body {
-      font-family: 'M PLUS Rounded 1c', sans-serif;
-      background-color: #F9FAFB;
-      background-image: radial-gradient(#E5E7EB 1.5px, transparent 1.5px);
-      background-size: 24px 24px;
-    }
+    body { font-family: 'M PLUS Rounded 1c', sans-serif; background-color: #F9FAFB; background-image: radial-gradient(#E5E7EB 1.5px, transparent 1.5px); background-size: 24px 24px; }
     .clean-box { background-color: white; border-radius: 1.5rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); border: 1px solid #F3F4F6; }
     .clean-btn { border-radius: 1rem; transition: all 0.2s ease; font-weight: 700; }
     .clean-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08); }
@@ -47,10 +38,8 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // ✨✨✨ 您專屬的 Google Apps Script 網址 (已更新) ✨✨✨
-    const FIXED_GAS_URL = 'https://script.google.com/macros/s/AKfycbz8PuqxvXMnDOLizffDYbvjHkkUJc8wvfGlfAUcXSR-XVxawhnzOkmAmcgZ4ir8EzIt/exec';
-    
-    // ✨✨✨ 老師後台的登入密碼 (可自行修改) ✨✨✨
+    // ✨ 這是您最新提供的 GAS 網址
+    const FIXED_GAS_URL = '[https://script.google.com/macros/s/AKfycbz8PuqxvXMnDOLizffDYbvjHkkUJc8wvfGlfAUcXSR-XVxawhnzOkmAmcgZ4ir8EzIt/exec](https://script.google.com/macros/s/AKfycbz8PuqxvXMnDOLizffDYbvjHkkUJc8wvfGlfAUcXSR-XVxawhnzOkmAmcgZ4ir8EzIt/exec)';
     const ADMIN_PASSWORD = '1234'; 
 
     const Icon = ({ name, size = 18, className = "" }) => <i className={`fas fa-${name} ${className}`} style={{ fontSize: size }}></i>;
@@ -89,7 +78,6 @@
       );
     };
 
-    // CSV 解析器 (處理逗號與引號，避免內文有逗號時切錯欄位)
     function CSVToArray(strData) {
         let arrData = [[]];
         let matches = null;
@@ -112,14 +100,11 @@
       const [loadingMsg, setLoadingMsg] = useState('與伺服器連線中...');
       const [msgBox, setMsgBox] = useState({ show: false, title: '', msg: '', onConfirm: null });
       const [records, setRecords] = useState([]);
-      
       const [studentInfo, setStudentInfo] = useState({ classId: '', name: '' });
       const [isStudentSet, setIsStudentSet] = useState(false); 
-      
       const [isAdminAuth, setIsAdminAuth] = useState(false);
-      const [adminTab, setAdminTab] = useState('pending'); // 'pending' | 'all'
+      const [adminTab, setAdminTab] = useState('pending');
       const [tempPwd, setTempPwd] = useState('');
-      
       const [formData, setFormData] = useState({ id: '', classId: '', name: '', bookTitle: '', author: '', pages: '', reviewType: 'text', review: '', image: '' });
       const [isFormModalOpen, setIsFormModalOpen] = useState(false);
       const [viewRecordModal, setViewRecordModal] = useState({ show: false, data: null });
@@ -133,11 +118,11 @@
           const res = await fetch(gasUrl, { method: 'POST', body: params });
           const text = await res.text();
           let json;
-          try { json = JSON.parse(text); } catch (e) { return showMsg('錯誤', '資料讀取異常\n' + text); }
+          try { json = JSON.parse(text); } catch (e) { return showMsg('資料讀取異常', '您的 Google 試算表可能發生錯誤，或是尚未開放權限。\n\n詳細錯誤訊息：\n' + text); }
           if (json.status === 'success') setRecords((json.data.records || []).reverse());
           else showMsg('載入失敗', json.message);
         } catch (e) {
-          showMsg('網路錯誤', '❌ 連線失敗！請檢查您的網路或 GAS 網址。');
+          showMsg('網路錯誤', '❌ 連線失敗！\n1. 請確認 Google Apps Script 已經發布「新版本」。\n2. 請確認權限設為「所有人」。');
         } finally { setLoading(false); }
       };
 
@@ -153,17 +138,17 @@
           const res = await fetch(gasUrl, { method: 'POST', body: params });
           const text = await res.text();
           let json;
-          try { json = JSON.parse(text); } catch (e) { if(!silent) showMsg('失敗', text); return false; }
+          try { json = JSON.parse(text); } catch (e) { if(!silent) showMsg('執行失敗', '無法解析伺服器回傳內容:\n' + text); return false; }
 
           if (json.status === 'success') {
             if(!silent) await loadData();
             return true;
           } else {
-            if(!silent) showMsg('失敗', json.message);
+            if(!silent) showMsg('執行失敗', json.message);
             return false;
           }
         } catch (e) {
-          if(!silent) showMsg('錯誤', '❌ 發生錯誤。');
+          if(!silent) showMsg('網路錯誤', '❌ 連線發生錯誤。');
           return false;
         } finally {
           if(!silent) setLoading(false);
@@ -181,20 +166,19 @@
       };
 
       const submitForm = async () => {
-        if (!formData.classId || !formData.name || !formData.bookTitle) return showMsg('提醒', '請填寫班級、姓名與書名！');
+        if (!formData.classId || !formData.name || !formData.bookTitle) return showMsg('提醒', '請完整填寫班級、姓名與書名！');
         if (formData.reviewType === 'text' && !formData.review) return showMsg('提醒', '請填寫閱讀心得！');
         if (formData.reviewType === 'image' && !formData.image) return showMsg('提醒', '請上傳圖片！');
 
         const success = await apiCall(formData.id ? 'updateRecord' : 'addRecord', formData.id, formData);
         if (success) {
           setIsFormModalOpen(false);
-          showMsg('太棒了！', formData.id ? '紀錄已更新！' : '紀錄已送出，請等待老師審核喔！');
+          showMsg('太棒了！', formData.id ? '紀錄已成功更新！' : '紀錄已送出，請等待老師審核喔！');
         }
       };
 
-      // 匯出 CSV
       const exportCSV = () => {
-        let csvContent = "\uFEFF"; // BOM 確保 Excel 顯示中文正常
+        let csvContent = "\uFEFF"; 
         csvContent += "ID,時間,班級,姓名,書名,作者,頁數,心得類型,狀態,文字心得,圖片網址\n";
         records.forEach(r => {
           const safeReview = r.review ? r.review.replace(/"/g, '""') : '';
@@ -211,7 +195,6 @@
         link.click();
       };
 
-      // 匯入 CSV
       const handleImportCSV = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -227,27 +210,26 @@
           let successCount = 0;
           let failCount = 0;
           
-          // 從第二列開始 (略過標題)
           for(let i = 1; i < rows.length; i++) {
             const row = rows[i];
-            if(row.length < 5) continue; // 略過空白列
+            if(row.length < 5) continue; 
             
             setLoadingMsg(`匯入中... (${i} / ${rows.length - 1})`);
             
             const newRecord = {
-              id: '', // 新增留空
+              id: '', 
               classId: row[2] || '未填',
               name: row[3] || '未填',
               bookTitle: row[4] || '未填',
               author: row[5] || '',
               pages: row[6] || '',
               reviewType: row[7] || 'text',
-              status: row[8] || 'approved', // 匯入預設狀態為已通過
+              status: row[8] || 'approved', 
               review: row[9] || '',
               image: row[10] || ''
             };
             
-            const success = await apiCall('addRecord', null, newRecord, true); // silent call
+            const success = await apiCall('addRecord', null, newRecord, true); 
             if(success) successCount++; else failCount++;
           }
           
@@ -255,7 +237,7 @@
           await loadData();
           showMsg('匯入完成', `共處理 ${rows.length - 1} 筆資料。\n成功：${successCount} 筆\n失敗：${failCount} 筆`);
         });
-        e.target.value = ''; // 重置 input
+        e.target.value = ''; 
       };
 
       const renderNavbar = () => (
@@ -336,7 +318,6 @@
         const myRecords = records.filter(r => r.classId === studentInfo.classId && r.name === studentInfo.name);
         const approvedCount = myRecords.filter(r => r.status === 'approved').length;
         const pendingCount = myRecords.filter(r => r.status === 'pending').length;
-        const rejectedCount = myRecords.filter(r => r.status === 'rejected').length;
         
         let stage = { icon: '🥚', name: '閱讀新手', color: 'bg-gray-100 text-gray-500' };
         if (approvedCount >= 5) stage = { icon: '🐤', name: '知識小雞', color: 'bg-amber-100 text-amber-600' };
@@ -368,7 +349,6 @@
                         <div className="inline-flex items-center gap-2 text-gray-600 font-bold text-sm bg-gray-50 px-3 py-1.5 rounded-lg mb-4">
                           目前等級：<span className={stage.color.split(' ')[1]}>{stage.name}</span>
                         </div>
-                        {/* 學生數據統計儀表板 */}
                         <div className="grid grid-cols-3 gap-2 sm:gap-4 mt-2">
                           <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 flex flex-col items-center">
                              <span className="text-amber-600 text-xs sm:text-sm font-bold mb-1">⭐ 蒐集星星</span>
@@ -445,7 +425,6 @@
 
         return (
           <div className="max-w-6xl mx-auto mt-6 px-4 animate-bounce-in">
-            {/* 後台控制列 */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
               <div className="flex gap-2 bg-gray-100 p-1.5 rounded-xl w-full md:w-auto">
                 <button className={`flex-1 md:flex-none px-4 py-2 rounded-lg font-bold transition-all ${adminTab === 'pending' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setAdminTab('pending')}>
@@ -492,7 +471,6 @@
                         </>
                       )}
                       
-                      {/* 只有在「全部紀錄」分頁中才顯示刪除按鈕，避免誤刪正在審核的資料 */}
                       {adminTab === 'all' && (
                         <Button variant="outline" className="text-rose-500 border-rose-200 hover:bg-rose-50" icon="trash" onClick={() => showMsg('刪除確認', `確定要永久刪除這筆紀錄嗎？此動作無法復原。`, () => { apiCall('deleteRecord', r.id); setMsgBox({show:false}); })}></Button>
                       )}
