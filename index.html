@@ -5,42 +5,109 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>興嘉閱讀護照</title>
   
-  <!-- 載入 Tailwind CSS (負責美觀的樣式) -->
+  <!-- 載入 Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- 載入 FontAwesome (負責所有漂亮的圖示) -->
+  <!-- 載入 FontAwesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- 載入可愛的圓潤字體 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800;900&display=swap" rel="stylesheet">
   
   <!-- 載入 React 核心庫 -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  
-  <!-- 載入 Babel (讓瀏覽器能直接看懂 React 語法) -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <style>
-    /* 進入動畫 */
-    .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(15px); }
-      to { opacity: 1; transform: translateY(0); }
+    /* 全局設定圓潤字體 */
+    body {
+      font-family: 'M PLUS Rounded 1c', sans-serif;
+      /* 乾淨清新的淺色背景 */
+      background-color: #F9FAFB;
+      background-image: radial-gradient(#E5E7EB 1.5px, transparent 1.5px);
+      background-size: 24px 24px;
+    }
+
+    /* 清新風格的核心 CSS (無黑框、柔和陰影) */
+    .clean-box {
+      background-color: white;
+      border-radius: 1.5rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.025);
+      border: 1px solid #F3F4F6;
+    }
+
+    .clean-btn {
+      border-radius: 1rem;
+      transition: all 0.2s ease;
+      font-weight: 700;
     }
     
+    .clean-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+    }
+
+    .clean-btn:active {
+      transform: translateY(1px);
+      box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .clean-input {
+      border: 2px solid #E5E7EB;
+      border-radius: 1rem;
+      background-color: #FAFAFA;
+      transition: all 0.2s;
+    }
+    
+    .clean-input:focus {
+      background-color: #ffffff;
+      border-color: #60A5FA;
+      box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.15);
+      outline: none;
+    }
+
+    /* 進入動畫 */
+    .animate-bounce-in { animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    @keyframes bounceIn {
+      0% { opacity: 0; transform: scale(0.9) translateY(10px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    
+    /* 金句淡入淡出動畫 */
+    .fade-in { animation: fadeIn 0.8s ease-in-out; }
+    @keyframes fadeIn {
+      0% { opacity: 0; transform: translateY(5px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
     /* 美化卷軸 */
     ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    ::-webkit-scrollbar-track { background: #F3F4F6; border-radius: 10px;}
+    ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
   </style>
 </head>
-<body class="bg-slate-50 text-gray-800 font-sans antialiased min-h-screen pb-20">
+<body class="text-gray-800 antialiased min-h-screen pb-20 selection:bg-blue-200 selection:text-gray-900">
   
-  <!-- React 應用程式的掛載點 -->
   <div id="root"></div>
 
-  <!-- 這裡開始是所有的前端邏輯 -->
   <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
+    const { useState, useEffect } = React;
+
+    // --- 請確認這裡是您的 GAS 網址 ---
+    const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbyU4Ljogie6v0WdGG_UEul-gRbS1_U-rIFIWbn717DYU4QMdO8ti40QQ9DU2BRsddhJ/exec';
+
+    // 預設閱讀金句
+    const DEFAULT_QUOTES = [
+      "閱讀是一把鑰匙，為我們開啟知識的寶庫。 🗝️",
+      "書本是最好的朋友，隨時陪你展開奇妙冒險！ 🚀",
+      "每一本書，都是一場充滿驚喜的旅行。 🌍",
+      "打開書本，就等於打開了全世界！ 📖",
+      "閱讀讓我們站在巨人的肩膀上看世界。 🔭"
+    ];
 
     // --- 共用 UI 元件 ---
     const Icon = ({ name, size = 18, className = "" }) => (
@@ -48,24 +115,24 @@
     );
 
     const Card = ({ children, className = "" }) => (
-      <div className={`bg-white rounded-2xl shadow-sm border border-gray-100 p-6 ${className}`}>
+      <div className={`clean-box ${className}`}>
         {children}
       </div>
     );
 
     const Button = ({ children, onClick, variant = 'primary', className = "", icon, title }) => {
-      const baseStyle = "flex items-center justify-center gap-2 font-medium rounded-xl transition-all duration-200 active:scale-95";
+      const baseStyle = "flex items-center justify-center gap-2 clean-btn px-5 py-2.5 cursor-pointer";
       const variants = {
-        primary: "bg-amber-400 hover:bg-amber-500 text-white px-6 py-3 shadow-md shadow-amber-200",
-        secondary: "bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 shadow-md shadow-blue-200",
-        outline: "border-2 border-gray-200 hover:border-blue-400 text-gray-600 hover:text-blue-500 px-6 py-3",
-        danger: "bg-red-500 hover:bg-red-600 text-white px-6 py-3 shadow-md shadow-red-200",
-        success: "bg-green-500 hover:bg-green-600 text-white px-6 py-3 shadow-md shadow-green-200",
-        iconView: "bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg",
-        iconApprove: "bg-green-100 hover:bg-green-500 hover:text-white text-green-600 p-2 rounded-lg",
-        iconReject: "bg-red-100 hover:bg-red-500 hover:text-white text-red-600 p-2 rounded-lg",
-        iconEdit: "bg-blue-100 hover:bg-blue-500 hover:text-white text-blue-600 p-2 rounded-lg",
-        iconDelete: "bg-red-50 hover:bg-red-600 hover:text-white text-red-500 p-2 rounded-lg",
+        primary: "bg-blue-500 text-white hover:bg-blue-600",
+        secondary: "bg-amber-400 text-amber-950 hover:bg-amber-500",
+        danger: "bg-rose-500 text-white hover:bg-rose-600",
+        success: "bg-emerald-500 text-white hover:bg-emerald-600",
+        outline: "bg-white text-gray-700 border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50",
+        iconView: "bg-blue-50 text-blue-600 hover:bg-blue-100 p-2 text-lg",
+        iconApprove: "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 p-2 text-lg",
+        iconReject: "bg-rose-50 text-rose-600 hover:bg-rose-100 p-2 text-lg",
+        iconEdit: "bg-amber-50 text-amber-600 hover:bg-amber-100 p-2 text-lg",
+        iconDelete: "bg-gray-50 text-gray-500 hover:bg-gray-200 hover:text-rose-600 p-2 text-lg",
       };
       return (
         <button onClick={onClick} className={`${baseStyle} ${variants[variant]} ${className}`} title={title}>
@@ -77,27 +144,26 @@
 
     const Input = ({ label, ...props }) => (
       <div className="mb-4 text-left">
-        {label && <label className="block text-sm font-bold text-gray-700 mb-2">{label}</label>}
+        {label && <label className="block text-base font-bold text-gray-700 mb-1.5">{label}</label>}
         <input 
-          className="w-full px-4 py-3 rounded-xl border-2 border-gray-100 bg-gray-50 focus:bg-white focus:border-blue-400 focus:ring-0 transition-colors outline-none" 
+          className="w-full px-4 py-3 clean-input text-base font-medium text-gray-800" 
           {...props} 
         />
       </div>
     );
 
-    // --- 對話框元件 ---
     const Modal = ({ isOpen, onClose, title, children }) => {
       if (!isOpen) return null;
       return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh] animate-fade-in">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-              <h3 className="text-xl font-bold text-gray-800">{title}</h3>
-              <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-full text-gray-500 transition-colors">
-                <Icon name="times" size={20} />
+        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="clean-box w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-bounce-in m-2">
+            <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-white">
+              <h3 className="text-xl font-black text-gray-800">{title}</h3>
+              <button onClick={onClose} className="w-8 h-8 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 flex items-center justify-center transition-colors">
+                <Icon name="times" />
               </button>
             </div>
-            <div className="p-6 overflow-y-auto">
+            <div className="p-6 overflow-y-auto bg-gray-50">
               {children}
             </div>
           </div>
@@ -107,25 +173,29 @@
 
     // --- 主程式 App ---
     const App = () => {
-      // 系統狀態
-      const [gasUrl, setGasUrl] = useState(localStorage.getItem('gasUrl') || '');
+      const [gasUrl, setGasUrl] = useState(localStorage.getItem('gasUrl') || DEFAULT_GAS_URL);
       const [adminPwd, setAdminPwd] = useState(localStorage.getItem('adminPwd') || '');
-      const [currentView, setCurrentView] = useState(gasUrl ? 'dashboard' : 'settings');
+      const [currentView, setCurrentView] = useState('dashboard');
       const [loading, setLoading] = useState(false);
       const [msgBox, setMsgBox] = useState({ show: false, title: '', msg: '', type: 'info', onConfirm: null });
       
-      // 資料狀態
       const [records, setRecords] = useState([]);
       const [studentInfo, setStudentInfo] = useState({ classId: '', name: '' });
       
-      // 管理員專用狀態
       const [isAdminAuth, setIsAdminAuth] = useState(false);
       const [tempPwd, setTempPwd] = useState('');
-      const [adminTab, setAdminTab] = useState('pending'); // pending, approved, rejected
+      const [adminTab, setAdminTab] = useState('pending');
 
-      // 表單狀態
+      // 金句狀態與輪播
+      const [quotes, setQuotes] = useState(() => {
+        const saved = localStorage.getItem('hc_quotes');
+        return saved ? JSON.parse(saved) : DEFAULT_QUOTES;
+      });
+      const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
+      const [quoteForm, setQuoteForm] = useState({ show: false, mode: 'add', index: -1, text: '' });
+
       const [formData, setFormData] = useState({
-        id: '', bookTitle: '', author: '', publisher: '', pages: '', reviewType: 'text', review: '', image: ''
+        id: '', classId: '', name: '', bookTitle: '', author: '', publisher: '', pages: '', reviewType: 'text', review: '', image: ''
       });
       const [isFormModalOpen, setIsFormModalOpen] = useState(false);
       const [formMode, setFormMode] = useState('add');
@@ -136,70 +206,89 @@
         if (!gasUrl) return;
         setLoading(true);
         try {
-          const res = await fetch(`${gasUrl}?action=getAll`);
-          const json = await res.json();
-          if (json.status === 'success') {
-            setRecords(json.data.records.reverse() || []); // 反轉讓最新在上
-          } else {
-            showMsg('錯誤', '資料載入失敗: ' + json.message, 'error');
+          const res = await fetch(`${gasUrl}?action=getAll&t=${new Date().getTime()}`);
+          const text = await res.text();
+          try {
+            const json = JSON.parse(text);
+            if (json.status === 'success') {
+              setRecords(json.data.records.reverse() || []); 
+            } else {
+              showMsg('載入失敗', '伺服器回傳錯誤: ' + json.message, 'error');
+            }
+          } catch (err) {
+            showMsg('後端異常', '請確認 GAS 已發布為「新版本」。', 'error');
           }
         } catch (e) {
-          showMsg('錯誤', '無法連接到伺服器，請檢查 GAS 網址是否正確，且已發布為網頁應用程式。', 'error');
+          showMsg('網路錯誤', '無法連接到伺服器。', 'error');
         }
         setLoading(false);
       };
 
       useEffect(() => {
-        if (gasUrl && currentView !== 'settings') {
-          loadData();
-        }
+        if (gasUrl && currentView !== 'settings') loadData();
       }, [gasUrl, currentView]);
+
+      // 金句自動輪播
+      useEffect(() => {
+        if (quotes.length === 0) return;
+        const timer = setInterval(() => {
+          setCurrentQuoteIndex((prev) => (prev + 1) % quotes.length);
+        }, 6000); // 每 6 秒切換一次
+        return () => clearInterval(timer);
+      }, [quotes]);
+
+      // 儲存金句到 localStorage
+      useEffect(() => {
+        localStorage.setItem('hc_quotes', JSON.stringify(quotes));
+      }, [quotes]);
 
       const showMsg = (title, msg, type = 'info', onConfirm = null) => {
         setMsgBox({ show: true, title, msg, type, onConfirm });
       };
 
-      // 呼叫後端 API
       const apiCall = async (action, id = null, data = null) => {
         setLoading(true);
         try {
-          // 使用 POST 傳送資料給 GAS
           const res = await fetch(gasUrl, {
             method: 'POST',
             body: JSON.stringify({ action, id, data })
           });
-          const json = await res.json();
-          if (json.status === 'success') {
-            await loadData();
-            return true;
-          } else {
-            showMsg('錯誤', json.message, 'error');
+          const text = await res.text();
+          try {
+            const json = JSON.parse(text);
+            if (json.status === 'success') {
+              await loadData();
+              return true;
+            } else {
+              showMsg('執行失敗', json.message, 'error');
+              return false;
+            }
+          } catch (err) {
+            showMsg('執行異常', '後端錯誤。', 'error');
             return false;
           }
         } catch (e) {
-          showMsg('錯誤', '執行失敗，請檢查網路連線。', 'error');
+          showMsg('網路錯誤', '執行失敗，請檢查網路連線。', 'error');
           return false;
         } finally {
           setLoading(false);
         }
       };
 
-      // --- 各項操作 ---
       const saveSettings = () => {
-        if (!gasUrl.includes('script.google.com')) {
-          showMsg('提示', '請輸入有效的 Google Apps Script 網址 (開頭通常是 https://script.google.com/...)', 'warning');
-          return;
-        }
         localStorage.setItem('gasUrl', gasUrl);
         localStorage.setItem('adminPwd', adminPwd);
         setCurrentView('dashboard');
         showMsg('成功', '系統連接設定已儲存！', 'success');
+        loadData();
       };
 
       const handleAdminLogin = () => {
         if (tempPwd === adminPwd && adminPwd !== '') {
           setIsAdminAuth(true);
           setTempPwd('');
+        } else if (adminPwd === '') {
+           showMsg('提示', '您還沒設定後台密碼喔！', 'warning');
         } else {
           showMsg('錯誤', '密碼不正確！', 'error');
         }
@@ -208,10 +297,7 @@
       const handleImageUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
-          if (file.size > 5 * 1024 * 1024) {
-            showMsg('提示', '圖片大小不能超過 5MB', 'warning');
-            return;
-          }
+          if (file.size > 5 * 1024 * 1024) return showMsg('提示', '圖片不能超過 5MB 喔！', 'warning');
           const reader = new FileReader();
           reader.onload = (event) => setFormData({ ...formData, image: event.target.result, review: '' });
           reader.readAsDataURL(file);
@@ -219,33 +305,30 @@
       };
 
       const submitForm = async () => {
+        if (!formData.classId || !formData.name) return showMsg('提示', '請填寫班級和姓名', 'warning');
         if (!formData.bookTitle) return showMsg('提示', '請填寫書名', 'warning');
         if (formData.reviewType === 'text' && !formData.review) return showMsg('提示', '請填寫心得', 'warning');
         if (formData.reviewType === 'image' && !formData.image) return showMsg('提示', '請上傳圖片', 'warning');
 
         let success = false;
         if (formMode === 'add') {
-          if (!studentInfo.classId || !studentInfo.name) {
-            return showMsg('提示', '請先在護照首頁填寫班級姓名！', 'warning');
-          }
-          const submitData = { ...formData, classId: studentInfo.classId, name: studentInfo.name };
-          success = await apiCall('addRecord', null, submitData);
+          success = await apiCall('addRecord', null, formData);
         } else {
           success = await apiCall('updateRecord', formData.id, formData);
         }
 
         if (success) {
           setIsFormModalOpen(false);
-          showMsg('太棒了', formMode === 'add' ? '任務已送出，等待老師施展魔法審核！' : '紀錄已成功更新！', 'success');
+          showMsg('太棒了', formMode === 'add' ? '任務已送出！' : '紀錄已成功更新！', 'success');
         }
       };
 
       const handleAction = (action, record) => {
         if (action === 'delete') {
-          showMsg('確認刪除', `確定要刪除 ${record.name} 的《${record.bookTitle}》紀錄嗎？這個動作無法復原。`, 'warning', async () => {
+          showMsg('🗑️ 確認刪除', `確定要刪除《${record.bookTitle}》嗎？刪除後無法復原喔！`, 'warning', async () => {
             setMsgBox({ ...msgBox, show: false });
             await apiCall('deleteRecord', record.id);
-            showMsg('完成', '紀錄已刪除。', 'success');
+            showMsg('完成', '紀錄已經刪除。', 'success');
           });
         } else if (action === 'approve') {
           apiCall('approveRecord', record.id);
@@ -260,207 +343,259 @@
         }
       };
 
-      // --- 畫面渲染 ---
+      // 金句管理相關功能
+      const saveQuote = () => {
+        if(!quoteForm.text.trim()) return showMsg('提示', '金句內容不能空白喔！', 'warning');
+        const newQuotes = [...quotes];
+        if(quoteForm.mode === 'add'){
+          newQuotes.push(quoteForm.text);
+        } else {
+          newQuotes[quoteForm.index] = quoteForm.text;
+        }
+        setQuotes(newQuotes);
+        setQuoteForm({ show: false, mode: 'add', index: -1, text: '' });
+      };
+
+      const deleteQuote = (index) => {
+        showMsg('確認刪除', '確定要刪除這句閱讀金句嗎？', 'warning', () => {
+          const newQuotes = quotes.filter((_, i) => i !== index);
+          setQuotes(newQuotes);
+          setMsgBox({ ...msgBox, show: false });
+        });
+      };
+
+      // --- 導覽列 ---
       const renderNavbar = () => (
         <nav className="bg-white border-b border-gray-100 sticky top-0 z-40 px-4 py-3 shadow-sm">
-          <div className="max-w-6xl mx-auto flex justify-between items-center">
-            <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentView('dashboard')}>
-              <div className="bg-blue-500 p-2 rounded-xl text-white shadow-md">
-                <Icon name="book-open" size={24} />
+          <div className="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setCurrentView('dashboard')}>
+              <div className="bg-blue-500 p-2.5 rounded-xl text-white shadow-md shadow-blue-500/30 group-hover:scale-105 transition-transform">
+                <Icon name="book-reader" size={24} />
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-800 leading-tight">興嘉閱讀護照</h1>
-                <p className="text-xs text-amber-500 font-bold tracking-wider">XINGJIA PASSPORT</p>
+              <div className="flex flex-col">
+                <h1 className="text-xl md:text-2xl font-black text-gray-800 tracking-wide leading-tight">興嘉閱讀護照</h1>
+                <span className="text-[10px] md:text-xs text-blue-500 font-bold uppercase tracking-widest leading-none mt-0.5">Xingjia Reading Passport</span>
               </div>
             </div>
+            
             <div className="flex gap-2">
-              {gasUrl && (
-                <>
-                  <button onClick={() => setCurrentView('dashboard')} className={`p-2 rounded-lg transition-colors ${currentView === 'dashboard' ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`} title="大廳">
-                    <Icon name="home" size={22} />
-                  </button>
-                  <button onClick={() => setCurrentView('student')} className={`p-2 rounded-lg transition-colors ${currentView === 'student' ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:bg-gray-100'}`} title="個人護照">
-                    <Icon name="user" size={22} />
-                  </button>
-                  <button onClick={() => setCurrentView('admin')} className={`p-2 rounded-lg transition-colors ${currentView === 'admin' ? 'bg-amber-50 text-amber-600' : 'text-gray-500 hover:bg-gray-100'}`} title="管理員後台">
-                    <Icon name="shield-alt" size={22} />
-                  </button>
-                </>
-              )}
-              <button onClick={() => setCurrentView('settings')} className={`p-2 rounded-lg transition-colors ${currentView === 'settings' ? 'bg-gray-100 text-gray-800' : 'text-gray-500 hover:bg-gray-100'}`} title="系統設定">
-                <Icon name="cog" size={22} />
-              </button>
+              <Button variant={currentView === 'dashboard' ? 'primary' : 'outline'} className="py-2 px-3 md:px-4" onClick={() => setCurrentView('dashboard')}>
+                <Icon name="home" /> <span className="hidden sm:inline">大廳</span>
+              </Button>
+              <Button variant={currentView === 'student' ? 'secondary' : 'outline'} className="py-2 px-3 md:px-4" onClick={() => setCurrentView('student')}>
+                <Icon name="user-astronaut" /> <span className="hidden sm:inline">我的護照</span>
+              </Button>
+              <Button variant={currentView === 'admin' ? 'danger' : 'outline'} className="py-2 px-3 md:px-4" onClick={() => setCurrentView('admin')}>
+                <Icon name="magic" /> <span className="hidden sm:inline">老師專用</span>
+              </Button>
+              <Button variant={currentView === 'settings' ? 'primary' : 'outline'} className="py-2 px-3" onClick={() => setCurrentView('settings')}>
+                <Icon name="cog" />
+              </Button>
             </div>
           </div>
         </nav>
       );
 
+      // --- 大廳畫面 ---
       const renderDashboard = () => {
-        const totalBooks = records.length;
-        const totalReviews = records.filter(r => r.reviewType === 'text').length;
-        const uniqueStudents = new Set(records.map(r => `${r.classId}-${r.name}`)).size;
-        const approvedRecords = records.filter(r => r.status === 'approved').slice(0, 5); 
+        const approvedRecords = records.filter(r => r.status === 'approved').slice(0, 6); 
 
         return (
-          <div className="space-y-6 animate-fade-in max-w-6xl mx-auto">
-            <div className="text-center py-6">
-              <h2 className="text-3xl font-black text-gray-800 mb-2 flex items-center justify-center gap-2">
-                🌏 興嘉閱讀動態大廳
-              </h2>
-              <p className="text-gray-500">看看大家累積了多少閱讀能量！</p>
+          <div className="space-y-8 animate-bounce-in max-w-6xl mx-auto mt-6">
+            
+            {/* 閱讀金句輪播區塊 */}
+            {quotes.length > 0 && (
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-6 md:p-8 rounded-3xl border border-amber-100 shadow-sm flex flex-col md:flex-row items-center gap-6">
+                <div className="bg-amber-100 w-16 h-16 rounded-full flex items-center justify-center text-3xl shrink-0">
+                  💡
+                </div>
+                <div className="flex-1 text-center md:text-left">
+                  <p className="text-sm font-bold text-amber-600 mb-1 uppercase tracking-widest">Reading Quote</p>
+                  <p key={currentQuoteIndex} className="text-xl md:text-2xl font-black text-gray-800 fade-in leading-relaxed">
+                    {quotes[currentQuoteIndex]}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* 數據卡片 */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="p-8 text-center bg-white">
+                <div className="w-14 h-14 mx-auto bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center text-2xl mb-4">📚</div>
+                <p className="text-gray-500 font-bold mb-1">大家總共讀了</p>
+                <p className="text-5xl font-black text-gray-800">{records.length}<span className="text-lg text-gray-400 ml-1">本</span></p>
+              </Card>
+              <Card className="p-8 text-center bg-white">
+                <div className="w-14 h-14 mx-auto bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center text-2xl mb-4">📝</div>
+                <p className="text-gray-500 font-bold mb-1">累積文字心得</p>
+                <p className="text-5xl font-black text-gray-800">{records.filter(r => r.reviewType === 'text').length}<span className="text-lg text-gray-400 ml-1">篇</span></p>
+              </Card>
+              <Card className="p-8 text-center bg-white">
+                <div className="w-14 h-14 mx-auto bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center text-2xl mb-4">🎨</div>
+                <p className="text-gray-500 font-bold mb-1">累積畫畫心得</p>
+                <p className="text-5xl font-black text-gray-800">{records.filter(r => r.reviewType === 'image').length}<span className="text-lg text-gray-400 ml-1">幅</span></p>
+              </Card>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="bg-gradient-to-br from-indigo-50 to-blue-50 border-indigo-100 text-center relative overflow-hidden">
-                <p className="text-indigo-800 font-bold mb-2">全校閱讀冊數</p>
-                <p className="text-5xl font-black text-indigo-600">{totalBooks}</p>
-                <Icon name="book-open" className="absolute -bottom-4 -right-4 text-indigo-200 opacity-50" size={80} />
-              </Card>
-              <Card className="bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-100 text-center relative overflow-hidden">
-                <p className="text-emerald-800 font-bold mb-2">心得總篇數</p>
-                <p className="text-5xl font-black text-emerald-600">{totalReviews}</p>
-                <Icon name="edit" className="absolute -bottom-4 -right-4 text-emerald-200 opacity-50" size={80} />
-              </Card>
-              <Card className="bg-gradient-to-br from-sky-50 to-cyan-50 border-sky-100 text-center relative overflow-hidden">
-                <p className="text-sky-800 font-bold mb-2">參與學生數</p>
-                <p className="text-5xl font-black text-sky-600">{uniqueStudents}</p>
-                <Icon name="user" className="absolute -bottom-4 -right-4 text-sky-200 opacity-50" size={80} />
-              </Card>
-            </div>
-
-            <Card>
-              <h3 className="text-xl font-bold text-amber-500 mb-4 flex items-center gap-2">
-                ✨ 最新精選心得
-              </h3>
-              <div className="space-y-4">
+            {/* 最新精選 */}
+            <div className="mt-12">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-2 h-8 bg-blue-500 rounded-full"></div>
+                <h3 className="text-2xl font-black text-gray-800">🌟 最新閃亮星星</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {approvedRecords.length === 0 ? (
-                  <p className="text-center text-gray-400 py-8">目前還沒有通過審核的心得喔！去「個人護照」新增第一筆吧！</p>
+                  <Card className="col-span-full text-center py-16 bg-gray-50 border-dashed border-2 border-gray-200 shadow-none">
+                    <span className="text-5xl mb-4 block">🌱</span>
+                    <p className="text-gray-500 font-bold text-lg">目前還沒有星星，快去新增第一筆吧！</p>
+                  </Card>
                 ) : (
                   approvedRecords.map(r => (
-                    <div key={r.id} className="p-4 rounded-xl border border-gray-100 bg-gray-50 flex flex-col gap-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="font-bold text-blue-600">{r.classId} {r.name}</span>
-                        <span className="text-gray-400">{r.time.split(' ')[0]}</span>
+                    <Card key={r.id} className="p-5 hover:-translate-y-1 hover:shadow-xl transition-all cursor-pointer flex flex-col gap-4" onClick={() => handleAction('view', r)}>
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-lg text-sm">
+                          {r.classId} {r.name}
+                        </span>
+                        <span className="text-xs text-gray-400 font-medium">{r.time.split(' ')[0]}</span>
                       </div>
-                      <h4 className="font-bold text-gray-800 text-lg">《{r.bookTitle}》</h4>
+                      <h4 className="font-black text-gray-800 text-lg leading-snug">《{r.bookTitle}》</h4>
                       {r.reviewType === 'text' ? (
-                        <p className="text-gray-600 line-clamp-2">{r.review}</p>
+                        <p className="text-gray-600 text-sm leading-relaxed line-clamp-3 bg-gray-50 p-3 rounded-xl">
+                          {r.review}
+                        </p>
                       ) : (
-                        <div className="flex items-center gap-2 text-amber-600 bg-amber-50 w-fit px-3 py-1 rounded-full text-sm font-medium">
-                          <Icon name="image" size={16} /> 圖片心得分享
+                        <div className="flex items-center justify-center gap-2 text-rose-500 bg-rose-50 w-full py-3 rounded-xl text-sm font-bold">
+                          <Icon name="image" /> 觀看畫作心得
                         </div>
                       )}
-                    </div>
+                    </Card>
                   ))
                 )}
               </div>
-            </Card>
+            </div>
           </div>
         );
       };
 
+      // --- 學生專區 ---
       const renderStudent = () => {
         const myRecords = records.filter(r => r.classId === studentInfo.classId && r.name === studentInfo.name);
         const approvedCount = myRecords.filter(r => r.status === 'approved').length;
-        const pendingCount = myRecords.filter(r => r.status === 'pending' || r.status === 'rejected').length;
 
-        let stage = '閱讀之卵';
-        if (approvedCount >= 5) stage = '雛鳥孵化';
-        if (approvedCount >= 10) stage = '展翅高飛';
+        let stage = { icon: '🥚', name: '閱讀新手', color: 'bg-gray-100 text-gray-500' };
+        if (approvedCount >= 5) stage = { icon: '🐤', name: '知識小雞', color: 'bg-amber-100 text-amber-600' };
+        if (approvedCount >= 10) stage = { icon: '🦅', name: '聰明老鷹', color: 'bg-blue-100 text-blue-600' };
+        if (approvedCount >= 20) stage = { icon: '🐉', name: '博學飛龍', color: 'bg-rose-100 text-rose-600' };
 
         return (
-          <div className="space-y-6 max-w-3xl mx-auto animate-fade-in">
-            <Card className="flex flex-col md:flex-row items-center gap-6 bg-gradient-to-r from-blue-50 to-sky-50 border-blue-100">
-              <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-inner text-4xl border-4 border-blue-100">
-                {approvedCount >= 10 ? '🦅' : approvedCount >= 5 ? '🐤' : '🥚'}
-              </div>
-              <div className="flex-1 text-center md:text-left w-full">
-                {!studentInfo.name ? (
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <input placeholder="班級 (例: 508)" className="px-3 py-2 rounded-lg border outline-none focus:border-blue-400 w-full" 
-                           onChange={e => setStudentInfo({...studentInfo, classId: e.target.value})} />
-                    <input placeholder="姓名" className="px-3 py-2 rounded-lg border outline-none focus:border-blue-400 w-full"
-                           onChange={e => setStudentInfo({...studentInfo, name: e.target.value})} />
-                  </div>
-                ) : (
-                  <>
-                    <h2 className="text-2xl font-black text-gray-800">{studentInfo.classId} {studentInfo.name}</h2>
-                    <p className="text-blue-600 font-bold mt-1">目前階段：{stage}</p>
-                  </>
-                )}
-              </div>
-              <div className="flex gap-3">
-                 <div className="text-center bg-green-50 px-4 py-2 rounded-xl border border-green-100">
-                   <p className="text-xs text-green-600 font-bold mb-1">已通過</p>
-                   <p className="text-2xl font-black text-green-500">{approvedCount}</p>
-                 </div>
-                 <div className="text-center bg-amber-50 px-4 py-2 rounded-xl border border-amber-100">
-                   <p className="text-xs text-amber-600 font-bold mb-1">未通過</p>
-                   <p className="text-2xl font-black text-amber-500">{pendingCount}</p>
-                 </div>
+          <div className="space-y-6 max-w-4xl mx-auto animate-bounce-in mt-6">
+            <Card className="bg-white overflow-hidden">
+              <div className="flex flex-col md:flex-row items-center">
+                <div className={`w-full md:w-48 py-8 flex items-center justify-center text-6xl ${stage.color} transition-colors`}>
+                  {stage.icon}
+                </div>
+                
+                <div className="flex-1 p-6 w-full text-center md:text-left">
+                  {!studentInfo.name ? (
+                    <div>
+                      <h3 className="text-lg font-black text-gray-700 mb-4">請告訴我你的班級與姓名</h3>
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <input placeholder="班級 (例: 508)" className="clean-input px-4 py-2.5 w-full font-bold" 
+                               onChange={e => setStudentInfo({...studentInfo, classId: e.target.value})} />
+                        <input placeholder="姓名" className="clean-input px-4 py-2.5 w-full font-bold"
+                               onChange={e => setStudentInfo({...studentInfo, name: e.target.value})} />
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <h2 className="text-3xl font-black text-gray-800 mb-2">{studentInfo.classId} {studentInfo.name}</h2>
+                      <div className="inline-flex items-center gap-2 text-gray-600 font-bold text-sm bg-gray-50 px-3 py-1.5 rounded-lg">
+                        目前等級：<span className={stage.color.split(' ')[1]}>{stage.name}</span>
+                        <span className="mx-2 text-gray-300">|</span>
+                        擁有 {approvedCount} 顆星星
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </Card>
 
-            <div className="flex justify-center gap-4">
-              <Button icon="edit" onClick={() => {
-                if(!studentInfo.name) return showMsg('提示', '請先在上方輸入您的班級與姓名！', 'warning');
-                setFormMode('add');
-                setFormData({id: '', bookTitle: '', author: '', publisher: '', pages: '', reviewType: 'text', review: '', image: ''});
-                setIsFormModalOpen(true);
-              }}>新增紀錄</Button>
-              <Button variant="secondary" icon="sync-alt" onClick={loadData}>更新狀態</Button>
+            <div className="flex justify-between items-center px-2">
+              <h3 className="text-xl font-black text-gray-800 flex items-center gap-2">
+                <Icon name="history" className="text-blue-500" /> 我的閱讀紀錄
+              </h3>
+              <div className="flex gap-2">
+                <Button variant="outline" icon="sync-alt" onClick={loadData} title="重新整理" />
+                <Button variant="primary" icon="plus" onClick={() => {
+                   if(!studentInfo.name || !studentInfo.classId) return showMsg('提醒', '請先輸入你的班級與姓名喔！', 'warning');
+                   setFormMode('add');
+                   setFormData({id: '', classId: studentInfo.classId, name: studentInfo.name, bookTitle: '', author: '', publisher: '', pages: '', reviewType: 'text', review: '', image: ''});
+                   setIsFormModalOpen(true);
+                 }}>寫心得</Button>
+              </div>
             </div>
 
-            <Card>
-              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 border-b pb-4">
-                <Icon name="book-open" className="text-blue-500" /> 我的閱讀歷程
-              </h3>
-              
-              {studentInfo.name && myRecords.length === 0 && (
-                <div className="text-center text-gray-400 py-10 flex flex-col items-center">
-                  <span className="text-4xl mb-2">📭</span>
-                  <p>護照還是空的，快去新增第一筆紀錄吧！</p>
-                </div>
-              )}
+            {studentInfo.name && myRecords.length === 0 && (
+              <Card className="text-center py-16 bg-gray-50 border-dashed border-2 border-gray-200 shadow-none">
+                <span className="text-5xl mb-4 block text-gray-400"><Icon name="folder-open"/></span>
+                <p className="text-gray-500 font-bold text-lg">紀錄空空的，快點擊上方的「寫心得」吧！</p>
+              </Card>
+            )}
 
-              <div className="space-y-3 mt-4">
-                {myRecords.map(r => (
-                  <div key={r.id} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 bg-gray-50 rounded-xl border border-gray-100 gap-4">
-                    <div className="flex-1">
-                      <div className="text-xs text-gray-400 mb-1">{r.time}</div>
-                      <h4 className="font-bold text-gray-800">《{r.bookTitle}》</h4>
-                      <p className="text-sm text-gray-500 line-clamp-1">{r.reviewType==='text' ? r.review : '[圖片心得]'}</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {myRecords.map(r => (
+                <Card key={r.id} className="p-5 flex flex-col justify-between gap-4">
+                  <div>
+                    <div className="flex justify-between items-start mb-3">
+                      <h4 className="font-black text-gray-800 text-xl leading-tight">《{r.bookTitle}》</h4>
+                      <div className="shrink-0 ml-2">
+                        {r.status === 'approved' && <span className="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-md text-xs font-bold flex items-center gap-1"><Icon name="check"/> 過關</span>}
+                        {r.status === 'pending' && <span className="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-md text-xs font-bold">審核中</span>}
+                        {r.status === 'rejected' && <span className="bg-rose-100 text-rose-700 px-2.5 py-1 rounded-md text-xs font-bold">退回修改</span>}
+                      </div>
                     </div>
-                    <div>
-                      {r.status === 'approved' && <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1"><Icon name="check-circle" size={14}/> 已通過</span>}
-                      {r.status === 'pending' && <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-sm font-bold">⏳ 審核中</span>}
-                      {r.status === 'rejected' && <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1"><Icon name="times-circle" size={14}/> 需修改/退回</span>}
-                    </div>
+                    <p className="text-sm text-gray-500 font-medium line-clamp-2 bg-gray-50 p-3 rounded-lg">
+                      {r.reviewType==='text' ? r.review : '🎨 這是一幅美麗的畫作！'}
+                    </p>
                   </div>
-                ))}
-              </div>
-            </Card>
+                  
+                  <div className="flex gap-2 pt-2 border-t border-gray-100">
+                    <Button variant="outline" className="flex-1 text-sm py-1.5" onClick={() => handleAction('view', r)}>查看</Button>
+                    {r.status !== 'approved' && (
+                      <>
+                        <Button variant="secondary" className="flex-1 text-sm py-1.5" onClick={() => handleAction('edit', r)}>修改</Button>
+                        <Button variant="danger" className="flex-1 text-sm py-1.5" onClick={() => handleAction('delete', r)}>刪除</Button>
+                      </>
+                    )}
+                  </div>
+                </Card>
+              ))}
+            </div>
           </div>
         );
       };
 
+      // --- 老師後台 ---
       const renderAdmin = () => {
         if (!isAdminAuth) {
           return (
-            <div className="max-w-md mx-auto mt-10">
-              <Card className="text-center">
-                <div className="bg-amber-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-amber-500">
-                  <Icon name="shield-alt" size={32} />
+            <div className="max-w-sm mx-auto mt-20 animate-bounce-in">
+              <Card className="text-center p-8">
+                <div className="w-16 h-16 bg-blue-100 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                  <Icon name="lock" />
                 </div>
-                <h2 className="text-2xl font-bold mb-6 text-gray-800">管理員驗證</h2>
-                <Input 
+                <h2 className="text-2xl font-black text-gray-800 mb-2">老師管理處</h2>
+                <p className="text-gray-500 mb-6 text-sm">請輸入密碼以進入管理系統</p>
+                <input 
                   type="password" 
-                  placeholder="請輸入系統設定的密碼" 
+                  placeholder="輸入密碼..." 
+                  className="w-full px-4 py-3 clean-input text-center text-lg tracking-widest mb-4"
                   value={tempPwd}
                   onChange={(e) => setTempPwd(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAdminLogin()}
                 />
-                <Button className="w-full mt-4" onClick={handleAdminLogin}>進入後台</Button>
+                <Button variant="primary" className="w-full py-3" onClick={handleAdminLogin}>登入系統</Button>
               </Card>
             </div>
           );
@@ -476,92 +611,127 @@
         if (adminTab === 'rejected') displayRecords = rejectedRecords;
 
         return (
-          <div className="space-y-6 animate-fade-in max-w-6xl mx-auto">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+          <div className="space-y-6 animate-bounce-in max-w-6xl mx-auto mt-6">
+            <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-6 rounded-3xl shadow-sm border border-gray-100 gap-4">
               <div>
-                <h2 className="text-3xl font-black text-gray-800 flex items-center gap-2">
-                  <Icon name="shield-alt" className="text-amber-500" /> 管理員後台
+                <h2 className="text-2xl font-black text-gray-800 flex items-center gap-2">
+                  <Icon name="clipboard-check" className="text-emerald-500" /> 後台管理中心
                 </h2>
-                <p className="text-gray-500 mt-1">審核與管理學生的閱讀紀錄</p>
               </div>
-              <Button variant="outline" className="px-4 py-2" icon="sign-out-alt" onClick={() => setIsAdminAuth(false)}>登出</Button>
-            </div>
-
-            {/* 狀態切換頁籤 */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-4">
-              <div onClick={() => setAdminTab('pending')} 
-                   className={`cursor-pointer rounded-2xl p-3 sm:p-4 border-2 transition-all ${adminTab === 'pending' ? 'border-amber-400 bg-amber-50 shadow-md' : 'border-gray-100 bg-white hover:border-amber-200'}`}>
-                <p className="text-amber-600 font-bold text-xs sm:text-base mb-1">待審核</p>
-                <p className="text-2xl sm:text-4xl font-black text-amber-500">{pendingRecords.length}</p>
-              </div>
-              <div onClick={() => setAdminTab('approved')} 
-                   className={`cursor-pointer rounded-2xl p-3 sm:p-4 border-2 transition-all ${adminTab === 'approved' ? 'border-green-400 bg-green-50 shadow-md' : 'border-gray-100 bg-white hover:border-green-200'}`}>
-                <p className="text-green-600 font-bold text-xs sm:text-base mb-1">已通過</p>
-                <p className="text-2xl sm:text-4xl font-black text-green-500">{approvedRecords.length}</p>
-              </div>
-              <div onClick={() => setAdminTab('rejected')} 
-                   className={`cursor-pointer rounded-2xl p-3 sm:p-4 border-2 transition-all ${adminTab === 'rejected' ? 'border-red-400 bg-red-50 shadow-md' : 'border-gray-100 bg-white hover:border-red-200'}`}>
-                <p className="text-red-600 font-bold text-xs sm:text-base mb-1">已退回</p>
-                <p className="text-2xl sm:text-4xl font-black text-red-500">{rejectedRecords.length}</p>
+              <div className="flex gap-2">
+                <Button variant="outline" icon="plus" onClick={() => {
+                  setFormMode('add');
+                  setFormData({id: '', classId: '', name: '', bookTitle: '', author: '', publisher: '', pages: '', reviewType: 'text', review: '', image: ''});
+                  setIsFormModalOpen(true);
+                }}>代為補登</Button>
+                <Button variant="outline" icon="sign-out-alt" className="text-rose-500 hover:bg-rose-50" onClick={() => setIsAdminAuth(false)}>登出</Button>
               </div>
             </div>
 
-            {/* 紀錄列表 */}
-            <Card className="p-0 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[800px]">
-                  <thead>
-                    <tr className="bg-gray-50 text-gray-500 text-sm border-b border-gray-100">
-                      <th className="p-4 font-medium whitespace-nowrap">時間</th>
-                      <th className="p-4 font-medium whitespace-nowrap">班級姓名</th>
-                      <th className="p-4 font-medium min-w-[200px]">書本資訊</th>
-                      <th className="p-4 font-medium">心得內容</th>
-                      <th className="p-4 font-medium text-center min-w-[220px]">操作</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {displayRecords.length === 0 ? (
-                      <tr>
-                        <td colSpan="5" className="p-8 text-center text-gray-400">目前沒有相關紀錄。</td>
+            {/* 標籤頁切換 */}
+            <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-hide">
+              <button onClick={() => setAdminTab('pending')} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-colors whitespace-nowrap ${adminTab === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>
+                ⏳ 等待審核 <span className="bg-white text-amber-600 px-2 py-0.5 rounded-md text-xs ml-1">{pendingRecords.length}</span>
+              </button>
+              <button onClick={() => setAdminTab('approved')} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-colors whitespace-nowrap ${adminTab === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>
+                ✅ 已過關 <span className="bg-white text-emerald-600 px-2 py-0.5 rounded-md text-xs ml-1">{approvedRecords.length}</span>
+              </button>
+              <button onClick={() => setAdminTab('rejected')} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-colors whitespace-nowrap ${adminTab === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>
+                🛠️ 退回重寫 <span className="bg-white text-rose-600 px-2 py-0.5 rounded-md text-xs ml-1">{rejectedRecords.length}</span>
+              </button>
+              <button onClick={() => setAdminTab('quotes')} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold transition-colors whitespace-nowrap ml-auto ${adminTab === 'quotes' ? 'bg-blue-100 text-blue-700' : 'bg-white text-gray-500 hover:bg-gray-50'}`}>
+                💬 金句管理
+              </button>
+            </div>
+
+            {adminTab === 'quotes' ? (
+              // 金句管理區塊
+              <Card className="p-6 bg-white animate-fade-in">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-bold text-gray-800">目前的前端閱讀金句</h3>
+                  <Button variant="primary" icon="plus" onClick={() => setQuoteForm({ show: true, mode: 'add', index: -1, text: '' })}>新增金句</Button>
+                </div>
+                <div className="space-y-3">
+                  {quotes.length === 0 ? (
+                    <p className="text-center text-gray-400 py-8">目前沒有金句，快來新增吧！</p>
+                  ) : (
+                    quotes.map((q, idx) => (
+                      <div key={idx} className="flex justify-between items-center bg-gray-50 p-4 rounded-xl border border-gray-100 hover:border-blue-200 transition-colors">
+                        <p className="text-gray-800 font-medium">{q}</p>
+                        <div className="flex gap-2 shrink-0 ml-4">
+                          <Button variant="iconEdit" icon="edit" onClick={() => setQuoteForm({ show: true, mode: 'edit', index: idx, text: q })} />
+                          <Button variant="iconDelete" icon="trash-alt" onClick={() => deleteQuote(idx)} />
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  <p className="text-xs text-gray-400 mt-4 text-right">※ 金句目前儲存於本機瀏覽器 (localStorage)</p>
+                </div>
+              </Card>
+            ) : (
+              // 審核列表區塊
+              <Card className="p-0 overflow-hidden bg-white">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[800px]">
+                    <thead>
+                      <tr className="bg-gray-50 text-gray-500 text-sm border-b border-gray-100">
+                        <th className="p-4 font-bold whitespace-nowrap">送出時間</th>
+                        <th className="p-4 font-bold whitespace-nowrap">班級姓名</th>
+                        <th className="p-4 font-bold min-w-[200px]">書名 / 作者</th>
+                        <th className="p-4 font-bold">心得預覽</th>
+                        <th className="p-4 font-bold text-center min-w-[200px]">管理操作</th>
                       </tr>
-                    ) : (
-                      displayRecords.map(r => (
-                        <tr key={r.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="p-4 text-sm text-gray-500 whitespace-nowrap">{r.time.split(' ')[0]}</td>
-                          <td className="p-4 whitespace-nowrap font-bold text-gray-800">{r.classId} {r.name}</td>
-                          <td className="p-4">
-                            <p className="font-bold text-blue-600 leading-tight mb-1">《{r.bookTitle}》</p>
-                            <p className="text-xs text-gray-400">{r.author || '無'} / {r.pages || '無'}頁</p>
-                          </td>
-                          <td className="p-4">
-                            {r.reviewType === 'text' ? (
-                              <p className="text-sm text-gray-600 line-clamp-2 max-w-xs">{r.review}</p>
-                            ) : (
-                              <div className="flex items-center gap-1 text-sm text-amber-600 bg-amber-50 w-fit px-2 py-1 rounded">
-                                <Icon name="image" size={14}/> 圖片內容
-                              </div>
-                            )}
-                          </td>
-                          <td className="p-4">
-                            <div className="flex flex-wrap items-center justify-center gap-2 bg-white rounded-xl shadow-sm border border-gray-100 p-1">
-                              <Button variant="iconView" icon="eye" onClick={() => handleAction('view', r)} title="查看完整內容" />
-                              {adminTab !== 'approved' && (
-                                 <Button variant="iconApprove" icon="check" onClick={() => handleAction('approve', r)} title="審核通過" />
-                              )}
-                              {adminTab !== 'rejected' && (
-                                 <Button variant="iconReject" icon="times" onClick={() => handleAction('reject', r)} title="退回修改" />
-                              )}
-                              <Button variant="iconEdit" icon="edit" onClick={() => handleAction('edit', r)} title="編輯內容" />
-                              <Button variant="iconDelete" icon="trash-alt" onClick={() => handleAction('delete', r)} title="永久刪除" />
-                            </div>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {displayRecords.length === 0 ? (
+                        <tr>
+                          <td colSpan="5" className="p-12 text-center text-gray-400 font-medium">
+                            這裡目前空空的喔！🎐
                           </td>
                         </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </Card>
+                      ) : (
+                        displayRecords.map(r => (
+                          <tr key={r.id} className="hover:bg-gray-50/50 transition-colors">
+                            <td className="p-4 text-sm text-gray-400">{r.time.split(' ')[0]}</td>
+                            <td className="p-4">
+                               <span className="font-bold text-sm text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md whitespace-nowrap">
+                                  {r.classId} {r.name}
+                               </span>
+                            </td>
+                            <td className="p-4">
+                              <p className="font-bold text-gray-800 text-base leading-tight mb-1">《{r.bookTitle}》</p>
+                              <span className="text-xs text-gray-400">{r.author || '未填寫作者'}</span>
+                            </td>
+                            <td className="p-4">
+                              {r.reviewType === 'text' ? (
+                                <p className="text-sm text-gray-600 line-clamp-2 bg-white border border-gray-100 p-2 rounded-lg max-w-xs">{r.review}</p>
+                              ) : (
+                                <div className="flex items-center gap-1.5 text-rose-500 bg-rose-50 w-fit px-2.5 py-1 rounded-md text-xs font-bold">
+                                  <Icon name="image" /> 照片心得
+                                </div>
+                              )}
+                            </td>
+                            <td className="p-4">
+                              <div className="flex flex-wrap items-center justify-center gap-2">
+                                <Button variant="iconView" icon="eye" onClick={() => handleAction('view', r)} title="檢視內容" />
+                                {adminTab !== 'approved' && (
+                                   <Button variant="iconApprove" icon="check" onClick={() => handleAction('approve', r)} title="通過" />
+                                )}
+                                {adminTab !== 'rejected' && (
+                                   <Button variant="iconReject" icon="times" onClick={() => handleAction('reject', r)} title="退回" />
+                                )}
+                                <Button variant="iconEdit" icon="edit" onClick={() => handleAction('edit', r)} title="編輯" />
+                                <Button variant="iconDelete" icon="trash-alt" onClick={() => handleAction('delete', r)} title="刪除" />
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
           </div>
         );
       };
@@ -570,33 +740,34 @@
         <>
           {renderNavbar()}
 
-          <main className="p-4 mt-4">
+          <main className="p-4">
             {currentView === 'settings' && (
-              <div className="max-w-md mx-auto mt-10 animate-fade-in">
-                <Card className="text-center shadow-lg border-t-4 border-t-amber-400">
-                  <div className="bg-blue-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-500 shadow-inner">
-                    <Icon name="cog" size={40} />
+              <div className="max-w-md mx-auto mt-16 animate-bounce-in">
+                <Card className="p-8 bg-white text-center">
+                  <div className="w-16 h-16 bg-gray-100 text-gray-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                    <Icon name="cogs" />
                   </div>
-                  <h2 className="text-2xl font-black text-amber-600 mb-2">系統連接設定</h2>
-                  <p className="text-gray-500 text-sm mb-6">填寫後端網址與自訂密碼，開啟閱讀魔法旅程！</p>
+                  <h2 className="text-2xl font-black text-gray-800 mb-2">系統設定</h2>
+                  <p className="text-gray-500 text-sm mb-6">設定資料庫連接與管理員密碼</p>
                   
-                  <Input 
-                    label="Google Apps Script 網頁應用程式網址" 
-                    placeholder="https://script.google.com/macros/s/..." 
-                    value={gasUrl} 
-                    onChange={e => setGasUrl(e.target.value)} 
-                  />
-                  <Input 
-                    label="管理員通關密碼 (自訂)" 
-                    type="password" 
-                    placeholder="設定一組密碼供日後登入後台使用" 
-                    value={adminPwd} 
-                    onChange={e => setAdminPwd(e.target.value)} 
-                  />
-                  
-                  <Button className="w-full mt-6 text-lg py-4" onClick={saveSettings}>
-                    ✨ 儲存設定並開始
-                  </Button>
+                  <div className="text-left">
+                    <Input 
+                      label="🔗 Google Apps Script 網址" 
+                      value={gasUrl} 
+                      onChange={e => setGasUrl(e.target.value)} 
+                    />
+                    <Input 
+                      label="🔑 後台管理員密碼" 
+                      type="password" 
+                      placeholder="設定密碼..." 
+                      value={adminPwd} 
+                      onChange={e => setAdminPwd(e.target.value)} 
+                    />
+                    
+                    <Button className="w-full mt-6 py-3" variant="primary" onClick={saveSettings}>
+                      儲存設定
+                    </Button>
+                  </div>
                 </Card>
               </div>
             )}
@@ -606,30 +777,22 @@
             {currentView === 'admin' && renderAdmin()}
           </main>
 
-          {/* 全域 Loading 遮罩 */}
+          {/* 載入中動畫 */}
           {loading && (
             <div className="fixed inset-0 bg-white/70 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
-              <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin"></div>
-              <p className="mt-4 text-blue-600 font-bold animate-pulse">資料同步中...</p>
+              <Icon name="spinner" className="text-4xl text-blue-500 animate-spin mb-4" />
+              <p className="text-lg text-gray-700 font-bold">處理中...</p>
             </div>
           )}
 
-          {/* 全域訊息對話框 */}
-          <Modal isOpen={msgBox.show} onClose={() => setMsgBox({ ...msgBox, show: false })} title={msgBox.title}>
+          {/* 訊息彈出視窗 */}
+          <Modal isOpen={msgBox.show} onClose={() => setMsgBox({ ...msgBox, show: false })} title="系統提示">
             <div className="text-center py-4">
-              <div className={`mx-auto w-16 h-16 rounded-full flex items-center justify-center mb-4 ${
-                msgBox.type === 'error' ? 'bg-red-100 text-red-500' :
-                msgBox.type === 'success' ? 'bg-green-100 text-green-500' :
-                msgBox.type === 'warning' ? 'bg-amber-100 text-amber-500' :
-                'bg-blue-100 text-blue-500'
-              }`}>
-                <Icon name={
-                  msgBox.type === 'error' ? 'times' :
-                  msgBox.type === 'success' ? 'check' :
-                  msgBox.type === 'warning' ? 'exclamation-triangle' : 'info'
-                } size={32} />
+              <div className={`text-5xl mb-4 ${msgBox.type === 'error' ? 'text-rose-500' : msgBox.type === 'success' ? 'text-emerald-500' : msgBox.type === 'warning' ? 'text-amber-500' : 'text-blue-500'}`}>
+                {msgBox.type === 'error' ? <Icon name="times-circle"/> : msgBox.type === 'success' ? <Icon name="check-circle"/> : msgBox.type === 'warning' ? <Icon name="exclamation-triangle"/> : <Icon name="info-circle"/>}
               </div>
-              <p className="text-lg text-gray-700 font-medium mb-8 whitespace-pre-line">{msgBox.msg}</p>
+              <h4 className="text-xl font-black text-gray-800 mb-2">{msgBox.title}</h4>
+              <p className="text-gray-600 mb-6 whitespace-pre-line">{msgBox.msg}</p>
               <div className="flex justify-center gap-3">
                 {msgBox.onConfirm && (
                   <Button variant="outline" onClick={() => setMsgBox({ ...msgBox, show: false })}>取消</Button>
@@ -640,94 +803,127 @@
                     if (msgBox.onConfirm) msgBox.onConfirm();
                     else setMsgBox({ ...msgBox, show: false });
                   }}
+                  className="px-8"
                 >
-                  確定
+                  確認
                 </Button>
               </div>
             </div>
           </Modal>
 
-          {/* 新增/編輯紀錄表單 Modal */}
-          <Modal isOpen={isFormModalOpen} onClose={() => setIsFormModalOpen(false)} title={formMode === 'add' ? '✨ 新增閱讀紀錄' : '✏️ 編輯閱讀紀錄'}>
+          {/* 金句編輯彈出視窗 */}
+          <Modal isOpen={quoteForm.show} onClose={() => setQuoteForm({ ...quoteForm, show: false })} title={quoteForm.mode === 'add' ? '✨ 新增閱讀金句' : '✏️ 編輯閱讀金句'}>
             <div className="space-y-4">
-              <Input label="書名 (必填)" value={formData.bookTitle} onChange={e => setFormData({...formData, bookTitle: e.target.value})} />
-              <div className="grid grid-cols-2 gap-4">
-                <Input label="作者" value={formData.author} onChange={e => setFormData({...formData, author: e.target.value})} />
-                <Input label="頁數" type="number" value={formData.pages} onChange={e => setFormData({...formData, pages: e.target.value})} />
+              <textarea 
+                className="w-full px-4 py-3 clean-input min-h-[120px] resize-y text-base font-medium" 
+                placeholder="在這裡輸入名言佳句... 可以加上 Emoji 喔！"
+                value={quoteForm.text} 
+                onChange={e => setQuoteForm({...quoteForm, text: e.target.value})}
+              />
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setQuoteForm({ ...quoteForm, show: false })}>取消</Button>
+                <Button variant="primary" onClick={saveQuote}>儲存</Button>
               </div>
-              <Input label="出版社" value={formData.publisher} onChange={e => setFormData({...formData, publisher: e.target.value})} />
+            </div>
+          </Modal>
+
+          {/* 表單彈出視窗 */}
+          <Modal isOpen={isFormModalOpen} onClose={() => setIsFormModalOpen(false)} title={formMode === 'add' ? '✨ 新增心得紀錄' : '✏️ 修改紀錄'}>
+            <div className="space-y-4">
               
-              <div className="bg-amber-50 p-4 rounded-xl border border-amber-100">
-                <h4 className="font-bold text-amber-800 mb-3">心得格式</h4>
-                <div className="flex gap-4 mb-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" checked={formData.reviewType === 'text'} onChange={() => setFormData({...formData, reviewType: 'text'})} className="w-4 h-4 text-blue-600" />
-                    <span className="font-medium text-gray-700">純文字心得</span>
+              {isAdminAuth && (
+                 <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 mb-4">
+                   <p className="text-sm font-bold text-amber-700 mb-2 flex items-center gap-1.5"><Icon name="magic" /> 老師代為發布設定</p>
+                   <div className="grid grid-cols-2 gap-3">
+                     <input className="clean-input px-3 py-2 text-sm" placeholder="班級" value={formData.classId} onChange={e => setFormData({...formData, classId: e.target.value})} />
+                     <input className="clean-input px-3 py-2 text-sm" placeholder="姓名" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                   </div>
+                 </div>
+              )}
+
+              <Input label="書本名稱 *" placeholder="必填" value={formData.bookTitle} onChange={e => setFormData({...formData, bookTitle: e.target.value})} />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <Input label="作者" placeholder="選填" value={formData.author} onChange={e => setFormData({...formData, author: e.target.value})} />
+                <Input label="頁數" placeholder="選填" type="number" value={formData.pages} onChange={e => setFormData({...formData, pages: e.target.value})} />
+              </div>
+              <Input label="出版社" placeholder="選填" value={formData.publisher} onChange={e => setFormData({...formData, publisher: e.target.value})} />
+              
+              <div className="bg-white p-4 rounded-xl border border-gray-100 mt-2">
+                <h4 className="font-bold text-gray-700 mb-3">心得類型</h4>
+                <div className="flex gap-3 mb-4">
+                  <label className={`flex-1 flex items-center justify-center gap-2 cursor-pointer p-3 rounded-lg border-2 transition-all ${formData.reviewType === 'text' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-100 bg-white hover:bg-gray-50'}`}>
+                    <input type="radio" checked={formData.reviewType === 'text'} onChange={() => setFormData({...formData, reviewType: 'text'})} className="hidden" />
+                    <Icon name="font" />
+                    <span className="font-bold">文字心得</span>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" checked={formData.reviewType === 'image'} onChange={() => setFormData({...formData, reviewType: 'image'})} className="w-4 h-4 text-blue-600" />
-                    <span className="font-medium text-gray-700">圖片/畫作上傳</span>
+                  <label className={`flex-1 flex items-center justify-center gap-2 cursor-pointer p-3 rounded-lg border-2 transition-all ${formData.reviewType === 'image' ? 'border-rose-500 bg-rose-50 text-rose-700' : 'border-gray-100 bg-white hover:bg-gray-50'}`}>
+                    <input type="radio" checked={formData.reviewType === 'image'} onChange={() => setFormData({...formData, reviewType: 'image'})} className="hidden" />
+                    <Icon name="image" />
+                    <span className="font-bold">圖片/照片</span>
                   </label>
                 </div>
 
                 {formData.reviewType === 'text' ? (
                   <textarea 
-                    className="w-full px-4 py-3 rounded-xl border-2 border-amber-200 focus:border-amber-400 outline-none min-h-[150px]" 
-                    placeholder="寫下你的心得分享..."
+                    className="w-full px-4 py-3 clean-input min-h-[140px] resize-y text-base" 
+                    placeholder="寫下你的閱讀心得吧..."
                     value={formData.review} 
                     onChange={e => setFormData({...formData, review: e.target.value})}
                   />
                 ) : (
-                  <div className="relative border-2 border-dashed border-amber-300 rounded-xl p-6 text-center bg-white hover:bg-amber-50 transition-colors">
-                    <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                  <div className="relative border-2 border-dashed border-gray-300 rounded-xl p-6 text-center bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer">
+                    <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
                     {formData.image ? (
-                       <div className="text-green-600 font-bold flex flex-col items-center gap-2">
-                         <Icon name="check-circle" size={32} />
-                         <p>圖片已選擇 (點擊可重新選擇)</p>
-                         {formData.image.startsWith('data:') && <img src={formData.image} alt="預覽" className="max-h-32 mt-2 rounded border shadow" />}
+                       <div className="flex flex-col items-center gap-2">
+                         <Icon name="check-circle" className="text-3xl text-emerald-500" />
+                         <p className="font-bold text-sm text-gray-600">圖片已選取 (點擊可更換)</p>
+                         {formData.image.startsWith('data:') && <img src={formData.image} alt="預覽" className="max-h-32 mt-2 rounded-lg shadow-sm" />}
                        </div>
                     ) : (
-                       <div className="text-amber-500 font-bold flex flex-col items-center gap-2">
-                         <Icon name="cloud-upload-alt" size={40} />
-                         <p>點擊或拖曳上傳圖片</p>
+                       <div className="flex flex-col items-center gap-2 text-gray-400">
+                         <Icon name="cloud-upload-alt" className="text-4xl" />
+                         <p className="font-bold text-sm">點擊或拖曳上傳圖片</p>
                        </div>
                     )}
                   </div>
                 )}
               </div>
               
-              <Button className="w-full py-4 text-lg mt-4" onClick={submitForm}>
-                {formMode === 'add' ? '確認無誤，送出審核！' : '儲存修改'}
+              <Button className="w-full py-3 mt-4" variant="primary" onClick={submitForm}>
+                {formMode === 'add' ? '送出心得' : '儲存修改'}
               </Button>
             </div>
           </Modal>
 
-          {/* 檢視詳細內容 Modal */}
-          <Modal isOpen={viewRecordModal.show} onClose={() => setViewRecordModal({ show: false, data: null })} title="📖 閱讀紀錄詳情">
+          {/* 觀看單筆紀錄彈出視窗 */}
+          <Modal isOpen={viewRecordModal.show} onClose={() => setViewRecordModal({ show: false, data: null })} title="閱讀心得">
             {viewRecordModal.data && (
               <div className="space-y-4">
-                <div className="bg-blue-50 p-4 rounded-xl">
-                  <p className="text-sm text-blue-500 font-bold">{viewRecordModal.data.classId} {viewRecordModal.data.name} 的紀錄</p>
-                  <h3 className="text-xl font-black text-gray-800 mt-1">《{viewRecordModal.data.bookTitle}》</h3>
-                  <p className="text-sm text-gray-600 mt-2">
-                    作者：{viewRecordModal.data.author || '未填寫'} | 
-                    出版社：{viewRecordModal.data.publisher || '未填寫'} | 
-                    頁數：{viewRecordModal.data.pages || '未填寫'}
-                  </p>
+                <div className="bg-blue-50 p-5 rounded-2xl">
+                  <span className="bg-blue-200 text-blue-800 px-2.5 py-1 rounded-md text-xs font-bold mb-2 inline-block">
+                    {viewRecordModal.data.classId} {viewRecordModal.data.name}
+                  </span>
+                  <h3 className="text-2xl font-black text-gray-800 mt-1 leading-tight">《{viewRecordModal.data.bookTitle}》</h3>
+                  <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3 text-xs text-gray-500 font-medium">
+                    <span>作者：{viewRecordModal.data.author || '未填寫'}</span>
+                    <span>出版：{viewRecordModal.data.publisher || '未填寫'}</span>
+                    <span>頁數：{viewRecordModal.data.pages ? `${viewRecordModal.data.pages} 頁` : '未填寫'}</span>
+                  </div>
                 </div>
                 
-                <div className="p-4 bg-gray-50 border border-gray-100 rounded-xl">
-                  <h4 className="font-bold text-gray-700 mb-2 border-b pb-2">心得內容</h4>
+                <div className="p-5 bg-white border border-gray-100 rounded-2xl shadow-sm">
+                  <h4 className="font-bold text-gray-500 text-sm mb-3">心得內容</h4>
                   {viewRecordModal.data.reviewType === 'text' ? (
-                    <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{viewRecordModal.data.review}</p>
+                    <p className="text-gray-700 whitespace-pre-wrap leading-relaxed text-base">{viewRecordModal.data.review}</p>
                   ) : (
-                    <div className="flex justify-center mt-2">
-                      <img src={viewRecordModal.data.image} alt="心得圖片" className="max-w-full rounded-lg shadow-md max-h-96 object-contain" />
+                    <div className="flex justify-center mt-2 bg-gray-50 rounded-xl p-2 border border-gray-100">
+                      <img src={viewRecordModal.data.image} alt="心得圖片" className="max-w-full rounded-lg max-h-[60vh] object-contain" />
                     </div>
                   )}
                 </div>
                 <div className="flex justify-end pt-2">
-                  <Button variant="outline" onClick={() => setViewRecordModal({ show: false, data: null })}>關閉</Button>
+                  <Button variant="outline" onClick={() => setViewRecordModal({ show: false, data: null })}>關閉視窗</Button>
                 </div>
               </div>
             )}
@@ -736,7 +932,6 @@
       );
     };
 
-    // 掛載 React
     const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
