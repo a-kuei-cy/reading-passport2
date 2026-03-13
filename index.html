@@ -38,7 +38,7 @@
   <script type="text/babel">
     const { useState, useEffect } = React;
 
-    // ✨ 您的 GAS 網址
+    // ✨ 您的 GAS 網址 (請確保有重新部署)
     const FIXED_GAS_URL = 'https://script.google.com/macros/s/AKfycbz8PuqxvXMnDOLizffDYbvjHkkUJc8wvfGlfAUcXSR-XVxawhnzOkmAmcgZ4ir8EzIt/exec';
     const ADMIN_PASSWORD = '1234'; 
 
@@ -103,10 +103,10 @@
       const [studentInfo, setStudentInfo] = useState({ classId: '', name: '' });
       const [isStudentSet, setIsStudentSet] = useState(false); 
       const [isAdminAuth, setIsAdminAuth] = useState(false);
-      const [adminTab, setAdminTab] = useState('pending');
+      const [adminTab, setAdminTab] = useState('pending'); // pending, all, diagnostics
       const [tempPwd, setTempPwd] = useState('');
+      const [diagnosticsLog, setDiagnosticsLog] = useState('');
       
-      // 表單資料加入 publisher (出版社)
       const [formData, setFormData] = useState({ 
         id: '', classId: '', name: '', bookTitle: '', author: '', publisher: '', pages: '', reviewType: 'text', review: '', image: '' 
       });
@@ -116,18 +116,79 @@
       const showMsg = (title, msg, onConfirm = null) => setMsgBox({ show: true, title, msg, onConfirm });
 
       const loadData = async () => {
-        setLoading(true); setLoadingMsg('讀取資料中...');
+        setLoading(true); setLoadingMsg('從資料庫讀取中...');
         try {
+          // 嘗試使用 POST (大部分修改後的 GAS 習慣使用 POST)
           const params = new URLSearchParams(); params.append('action', 'getAll');
-          const res = await fetch(gasUrl, { method: 'POST', body: params });
+          let res;
+          try {
+             res = await fetch(gasUrl, { method: 'POST', body: params });
+          } catch(e) {
+             // 備用方案: 嘗試 GET
+             res = await fetch(`${gasUrl}?action=getAll`);
+          }
+          
           const text = await res.text();
           let json;
-          try { json = JSON.parse(text); } catch (e) { return showMsg('資料讀取異常', '您的 Google 試算表可能發生錯誤。\n\n詳細錯誤訊息：\n' + text); }
-          if (json.status === 'success') setRecords((json.data.records || []).reverse());
-          else showMsg('載入失敗', json.message);
+          try { 
+            json = JSON.parse(text); 
+          } catch (e) { 
+            console.error("回傳的不是有效 JSON:", text);
+            return showMsg('資料格式錯誤', '無法解析 Google 試算表回傳的資料。\n請到「我是老師」>「🔧系統診斷」查看詳細錯誤訊息。'); 
+          }
+
+          // 🧠 智慧解析: 支援不同 GAS 寫法回傳的 JSON 結構
+          let rawRecords = [];
+          if (Array.isArray(json)) rawRecords = json;
+          else if (json.data && Array.isArray(json.data.records)) rawRecords = json.data.records;
+          else if (json.records && Array.isArray(json.records)) rawRecords = json.records;
+          else if (json.data && Array.isArray(json.data)) rawRecords = json.data;
+
+          // 🛡️ 智慧對應欄位 (容錯機制): 將中文欄位或不同大小寫轉換為標準 key，並自動去除空白
+          const normalizedRecords = rawRecords.map(r => ({
+            id: r.id || r['ID'] || r['編號'] || r['id'] || '',
+            classId: String(r.classId || r['班級'] || r['ClassId'] || r['classid'] || '').trim(),
+            name: String(r.name || r['姓名'] || r['Name'] || r['name'] || '').trim(),
+            bookTitle: r.bookTitle || r['書名'] || r['BookTitle'] || r['booktitle'] || '',
+            author: r.author || r['作者'] || r['Author'] || r['author'] || '',
+            publisher: r.publisher || r['出版社'] || r['Publisher'] || r['publisher'] || '',
+            pages: r.pages || r['頁數'] || r['Pages'] || r['pages'] || '',
+            reviewType: r.reviewType || r['心得類型'] || r['繳交方式'] || r['Type'] || 'text',
+            status: r.status || r['狀態'] || r['審核狀態'] || r['Status'] || 'pending',
+            review: r.review || r['心得'] || r['文字心得'] || r['Review'] || '',
+            image: r.image || r['圖片'] || r['圖片網址'] || r['Image'] || '',
+            time: r.time || r['時間'] || r['時間戳記'] || r['Timestamp'] || ''
+          }));
+
+          setRecords(normalizedRecords.reverse());
         } catch (e) {
-          showMsg('網路錯誤', '❌ 連線失敗！請確認網路狀態。');
-        } finally { setLoading(false); }
+          showMsg('網路錯誤', '❌ 連線失敗！請確認網路狀態或 GAS 網址是否正確。');
+          console.error(e);
+        } finally { 
+          setLoading(false); 
+        }
+      };
+
+      const runDiagnostics = async () => {
+        setDiagnosticsLog('⏳ 開始測試連線與抓取資料...\n--------------------------------\n');
+        try {
+          const params = new URLSearchParams(); params.append('action', 'getAll');
+          setDiagnosticsLog(prev => prev + `👉 正在向 GAS 網址發送 POST 請求...\n`);
+          const res = await fetch(gasUrl, { method: 'POST', body: params });
+          const text = await res.text();
+          
+          setDiagnosticsLog(prev => prev + `✅ 成功收到伺服器回應 (長度: ${text.length} 字元)\n\n👉 嘗試解析 JSON 格式...\n`);
+          
+          try {
+            const json = JSON.parse(text);
+            setDiagnosticsLog(prev => prev + `✅ JSON 解析成功！\n\n📌 伺服器回傳的原始資料結構前 300 字：\n${JSON.stringify(json, null, 2).substring(0, 300)}...\n\n👉 判斷：如果您看到這串資料，代表前後端連線正常。如果是空的 []，代表您的試算表目前沒有資料，或 Google Apps Script 抓錯工作表(Sheet)。`);
+          } catch(e) {
+            setDiagnosticsLog(prev => prev + `❌ JSON 解析失敗！\n錯誤原因: ${e.message}\n\n📌 伺服器實際回傳的內容 (前 300 字)：\n${text.substring(0, 300)}...\n\n👉 判斷：通常是因為 GAS 發布時權限沒有設為「所有人」，或者程式碼寫錯導致回傳 HTML 錯誤頁面而非 JSON 資料。請回 Google 試算表重新部署一次。`);
+          }
+
+        } catch(e) {
+          setDiagnosticsLog(prev => prev + `❌ 網路請求完全失敗！\n錯誤: ${e.message}\n👉 判斷：請檢查網路是否斷線，或者您的 GAS 網址 (${gasUrl}) 是不是貼錯了。`);
+        }
       };
 
       useEffect(() => { loadData(); }, []);
@@ -148,7 +209,7 @@
             if(!silent) await loadData();
             return true;
           } else {
-            if(!silent) showMsg('執行失敗', json.message);
+            if(!silent) showMsg('執行失敗', json.message || '發生未知錯誤');
             return false;
           }
         } catch (e) {
@@ -222,34 +283,21 @@
           if(rows.length < 2) return showMsg('錯誤', '找不到有效資料列');
           
           setLoading(true);
-          let successCount = 0;
-          let failCount = 0;
+          let successCount = 0; let failCount = 0;
           
           for(let i = 1; i < rows.length; i++) {
             const row = rows[i];
             if(row.length < 5) continue; 
             
             setLoadingMsg(`匯入中... (${i} / ${rows.length - 1})`);
-            
-            // 注意：這裡配合加入了出版社，陣列索引值有調整
             const newRecord = {
-              id: '', 
-              classId: row[2] || '未填',
-              name: row[3] || '未填',
-              bookTitle: row[4] || '未填',
-              author: row[5] || '',
-              publisher: row[6] || '',
-              pages: row[7] || '',
-              reviewType: row[8] || 'text',
-              status: row[9] || 'approved', 
-              review: row[10] || '',
-              image: row[11] || ''
+              id: '', classId: row[2] || '未填', name: row[3] || '未填', bookTitle: row[4] || '未填',
+              author: row[5] || '', publisher: row[6] || '', pages: row[7] || '', reviewType: row[8] || 'text',
+              status: row[9] || 'approved', review: row[10] || '', image: row[11] || ''
             };
-            
             const success = await apiCall('addRecord', null, newRecord, true); 
             if(success) successCount++; else failCount++;
           }
-          
           setLoading(false);
           await loadData();
           showMsg('匯入完成', `共處理 ${rows.length - 1} 筆資料。\n成功：${successCount} 筆\n失敗：${failCount} 筆`);
@@ -278,8 +326,8 @@
         const latestStars = approvedRecords.slice(0, 6); 
         const stats = {};
         approvedRecords.forEach(r => {
-          const key = `${String(r.classId).trim()}-${String(r.name).trim()}`;
-          if (!stats[key]) stats[key] = { classId: String(r.classId).trim(), name: String(r.name).trim(), count: 0 };
+          const key = `${r.classId}-${r.name}`;
+          if (!stats[key]) stats[key] = { classId: r.classId, name: r.name, count: 0 };
           stats[key].count++;
         });
         const studentStats = Object.values(stats).sort((a, b) => b.count - a.count).slice(0, 10);
@@ -291,6 +339,14 @@
               <Card className="p-8 text-center bg-white"><div className="w-14 h-14 mx-auto bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center text-2xl mb-4">📝</div><p className="text-gray-500 font-bold mb-1">累積文字心得</p><p className="text-5xl font-black text-gray-800">{records.filter(r => r.reviewType === 'text').length}<span className="text-lg text-gray-400 ml-1">篇</span></p></Card>
               <Card className="p-8 text-center bg-white"><div className="w-14 h-14 mx-auto bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center text-2xl mb-4">🎨</div><p className="text-gray-500 font-bold mb-1">累積畫畫心得</p><p className="text-5xl font-black text-gray-800">{records.filter(r => r.reviewType === 'image').length}<span className="text-lg text-gray-400 ml-1">幅</span></p></Card>
             </div>
+            
+            {records.length === 0 && (
+               <div className="bg-blue-50 text-blue-800 p-6 rounded-2xl text-center border-2 border-dashed border-blue-200 mt-6 font-bold flex flex-col items-center">
+                 <Icon name="info-circle" size={32} className="mb-2 text-blue-400" />
+                 目前系統找不到資料。如果您的試算表應該要有資料，請切換至「我是老師」> 點擊「🔧系統診斷」檢查連線狀況！
+               </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
               <Card className="p-6 md:p-8 bg-white flex flex-col h-full">
                 <div className="flex items-center gap-3 mb-6"><div className="w-10 h-10 bg-amber-100 text-amber-500 rounded-xl flex items-center justify-center text-xl">👑</div><h3 className="text-2xl font-black text-gray-800">閱讀達人榮譽榜</h3></div>
@@ -332,10 +388,9 @@
       };
 
       const renderStudent = () => {
-        // ✨ 重要修正：加入 .trim() 防止因為隱藏的空白字元導致抓不到學生的資料
         const myRecords = records.filter(r => 
-          String(r.classId || '').trim() === String(studentInfo.classId || '').trim() && 
-          String(r.name || '').trim() === String(studentInfo.name || '').trim()
+          r.classId === String(studentInfo.classId || '').trim() && 
+          r.name === String(studentInfo.name || '').trim()
         );
         const approvedCount = myRecords.filter(r => r.status === 'approved').length;
         const pendingCount = myRecords.filter(r => r.status === 'pending').length;
@@ -397,15 +452,11 @@
                 <Button variant="outline" className="flex-1 sm:flex-none" icon="sync-alt" onClick={loadData} />
                 <Button variant="primary" className="flex-1 sm:flex-none" icon="plus" onClick={() => {
                    if(!isStudentSet) return showMsg('提醒', '請先輸入班級姓名！');
-                   
-                   // 判斷是否為一、二年級 (以 1, 2, 一, 二 開頭的班級)
                    const isJunior = /^[12一二]/.test(studentInfo.classId.trim());
-                   
                    setFormData({
                      id: '', classId: studentInfo.classId, name: studentInfo.name, 
                      bookTitle: '', author: '', publisher: '', pages: '', 
-                     reviewType: 'text', // 預設都是文字
-                     review: '', image: ''
+                     reviewType: 'text', review: '', image: ''
                    });
                    setIsFormModalOpen(true);
                  }}>新增心得</Button>
@@ -456,12 +507,15 @@
         return (
           <div className="max-w-6xl mx-auto mt-6 px-4 animate-bounce-in">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-              <div className="flex gap-2 bg-gray-100 p-1.5 rounded-xl w-full md:w-auto">
-                <button className={`flex-1 md:flex-none px-4 py-2 rounded-lg font-bold transition-all ${adminTab === 'pending' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setAdminTab('pending')}>
+              <div className="flex gap-2 bg-gray-100 p-1.5 rounded-xl w-full md:w-auto overflow-x-auto">
+                <button className={`whitespace-nowrap flex-1 md:flex-none px-4 py-2 rounded-lg font-bold transition-all ${adminTab === 'pending' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setAdminTab('pending')}>
                   待審核 ({records.filter(r => r.status === 'pending').length})
                 </button>
-                <button className={`flex-1 md:flex-none px-4 py-2 rounded-lg font-bold transition-all ${adminTab === 'all' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setAdminTab('all')}>
+                <button className={`whitespace-nowrap flex-1 md:flex-none px-4 py-2 rounded-lg font-bold transition-all ${adminTab === 'all' ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'}`} onClick={() => setAdminTab('all')}>
                   全部紀錄 ({records.length})
+                </button>
+                <button className={`whitespace-nowrap flex-1 md:flex-none px-4 py-2 rounded-lg font-bold transition-all ${adminTab === 'diagnostics' ? 'bg-rose-500 shadow text-white' : 'text-rose-500 hover:bg-rose-100'}`} onClick={() => setAdminTab('diagnostics')}>
+                  🔧 系統診斷
                 </button>
               </div>
               
@@ -473,49 +527,58 @@
               </div>
             </div>
 
-            <div className="space-y-4">
-              {displayRecords.length === 0 ? (
-                <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm"><div className="text-5xl mb-4 text-emerald-400">☕</div><p className="text-gray-500 font-bold text-lg">目前沒有任何紀錄。</p></div>
-              ) : (
-                displayRecords.map(r => (
-                  <Card key={r.id} className="p-5 flex flex-col md:flex-row justify-between md:items-center gap-4 bg-white">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        {adminTab === 'all' && (
-                          <span className={`px-2 py-0.5 rounded text-xs font-bold ${r.status === 'approved' ? 'bg-green-100 text-green-700' : r.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                            {r.status === 'approved' ? '已通過' : r.status === 'rejected' ? '已退回' : '待審核'}
-                          </span>
-                        )}
-                        <span className="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded text-sm">{r.classId} {r.name}</span>
-                        <span className="text-xs text-gray-400">{r.time}</span>
+            {adminTab === 'diagnostics' ? (
+              <Card className="p-6 bg-white border-2 border-rose-100">
+                <h3 className="text-xl font-black text-rose-600 mb-4 flex items-center gap-2"><Icon name="stethoscope" /> GAS 連線除錯工具</h3>
+                <p className="text-gray-600 font-bold mb-4">如果您發現前台資料全部變成 0，請點擊下方按鈕測試，看看 Google 伺服器到底回傳了什麼給我們：</p>
+                <Button variant="danger" icon="play" onClick={runDiagnostics} className="mb-4">執行完整連線測試</Button>
+                <div className="bg-gray-900 text-green-400 p-4 rounded-xl overflow-x-auto font-mono text-sm whitespace-pre-wrap min-h-[300px]">
+                  {diagnosticsLog || '點擊上方按鈕開始測試...'}
+                </div>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {displayRecords.length === 0 ? (
+                  <div className="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm"><div className="text-5xl mb-4 text-emerald-400">☕</div><p className="text-gray-500 font-bold text-lg">目前沒有任何紀錄。</p></div>
+                ) : (
+                  displayRecords.map(r => (
+                    <Card key={r.id} className="p-5 flex flex-col md:flex-row justify-between md:items-center gap-4 bg-white">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          {adminTab === 'all' && (
+                            <span className={`px-2 py-0.5 rounded text-xs font-bold ${r.status === 'approved' ? 'bg-green-100 text-green-700' : r.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                              {r.status === 'approved' ? '已通過' : r.status === 'rejected' ? '已退回' : '待審核'}
+                            </span>
+                          )}
+                          <span className="font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded text-sm">{r.classId} {r.name}</span>
+                          <span className="text-xs text-gray-400">{r.time}</span>
+                        </div>
+                        <h4 className="font-black text-xl text-gray-800">《{r.bookTitle}》</h4>
                       </div>
-                      <h4 className="font-black text-xl text-gray-800">《{r.bookTitle}》</h4>
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                      <Button variant="outline" onClick={() => setViewRecordModal({show: true, data: r})}>查看</Button>
-                      
-                      {r.status === 'pending' && (
-                        <>
-                          <Button variant="success" icon="check" onClick={() => apiCall('approveRecord', r.id)}>給星星</Button>
-                          <Button variant="danger" icon="times" onClick={() => showMsg('退回確認', `要退回【${r.name}】的心得嗎？`, () => { apiCall('rejectRecord', r.id); setMsgBox({show:false}); })}>退回</Button>
-                        </>
-                      )}
-                      
-                      {adminTab === 'all' && (
-                        <Button variant="outline" className="text-rose-500 border-rose-200 hover:bg-rose-50" icon="trash" onClick={() => showMsg('刪除確認', `確定要永久刪除這筆紀錄嗎？此動作無法復原。`, () => { apiCall('deleteRecord', r.id); setMsgBox({show:false}); })}></Button>
-                      )}
-                    </div>
-                  </Card>
-                ))
-              )}
-            </div>
+                      <div className="flex gap-2 flex-wrap">
+                        <Button variant="outline" onClick={() => setViewRecordModal({show: true, data: r})}>查看</Button>
+                        
+                        {r.status === 'pending' && (
+                          <>
+                            <Button variant="success" icon="check" onClick={() => apiCall('approveRecord', r.id)}>給星星</Button>
+                            <Button variant="danger" icon="times" onClick={() => showMsg('退回確認', `要退回【${r.name}】的心得嗎？`, () => { apiCall('rejectRecord', r.id); setMsgBox({show:false}); })}>退回</Button>
+                          </>
+                        )}
+                        
+                        {adminTab === 'all' && (
+                          <Button variant="outline" className="text-rose-500 border-rose-200 hover:bg-rose-50" icon="trash" onClick={() => showMsg('刪除確認', `確定要永久刪除這筆紀錄嗎？此動作無法復原。`, () => { apiCall('deleteRecord', r.id); setMsgBox({show:false}); })}></Button>
+                        )}
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         );
       };
 
-      // 計算文字心得了字數
       const currentTextLength = (formData.review || '').trim().length;
-      // 判斷當前學生是否為 1, 2 年級
       const isJuniorStudent = /^[12一二]/.test((formData.classId || '').trim());
 
       return (
@@ -549,12 +612,10 @@
           <Modal isOpen={isFormModalOpen} onClose={() => setIsFormModalOpen(false)} title={formData.id ? "編輯閱讀紀錄" : "新增閱讀紀錄"}>
             <div className="space-y-4 bg-white">
               <div><label className="block text-sm font-bold text-gray-700 mb-1">書名 (必填)</label><input placeholder="例如：神奇樹屋" className="clean-input w-full px-4 py-3" value={formData.bookTitle} onChange={e => setFormData({...formData, bookTitle: e.target.value})} /></div>
-              
               <div className="flex gap-4">
                 <div className="flex-1"><label className="block text-sm font-bold text-gray-700 mb-1">作者</label><input placeholder="選填" className="clean-input w-full px-4 py-3" value={formData.author} onChange={e => setFormData({...formData, author: e.target.value})} /></div>
                 <div className="flex-1"><label className="block text-sm font-bold text-gray-700 mb-1">出版社</label><input placeholder="選填" className="clean-input w-full px-4 py-3" value={formData.publisher} onChange={e => setFormData({...formData, publisher: e.target.value})} /></div>
               </div>
-              
               <div className="flex gap-4">
                 <div className="flex-1"><label className="block text-sm font-bold text-gray-700 mb-1">頁數</label><input type="number" placeholder="選填" className="clean-input w-full px-4 py-3" value={formData.pages} onChange={e => setFormData({...formData, pages: e.target.value})} /></div>
                 <div className="flex-1">
