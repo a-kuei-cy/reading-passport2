@@ -1,758 +1,504 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  BookOpen, User, Check, X, Edit, Trash2, Download, Upload, 
-  Quote, LogOut, Settings, FileText, Image as ImageIcon,
-  MessageSquare, RefreshCw, AlertCircle, Save
-} from 'lucide-react';
-
-// 預設的雙語閱讀金句
-const defaultQuotes = [
-  { id: '1', zh: '閱讀是一座隨身攜帶的避難所。', en: 'Reading is a sanctuary you can carry with you.' },
-  { id: '2', zh: '書中自有黃金屋，書中自有顏如玉。', en: 'A book holds a house of gold.' },
-  { id: '3', zh: '今天讀書的人，明天就是領導者。', en: 'Today a reader, tomorrow a leader.' },
-  { id: '4', zh: '一本書就像一個口袋裡的花園。', en: 'A book is like a garden carried in the pocket.' }
-];
-
-export default function App() {
-  // 系統狀態
-  const [currentUser, setCurrentUser] = useState(null); // null, {role: 'student'}, {role: 'admin'}
-  const [view, setView] = useState('login'); // login, student_dash, student_submit, admin_dash, admin_quotes, admin_data
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>校園閱讀護照系統</title>
   
-  // 資料庫狀態 (使用 localStorage 模擬)
-  const [reflections, setReflections] = useState([]);
-  const [quotes, setQuotes] = useState(defaultQuotes);
-  
-  // 隨機金句
-  const [currentQuote, setCurrentQuote] = useState(defaultQuotes[0]);
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  // 初始化載入資料
-  useEffect(() => {
-    const savedReflections = localStorage.getItem('reading_reflections');
-    const savedQuotes = localStorage.getItem('reading_quotes');
-    if (savedReflections) setReflections(JSON.parse(savedReflections));
-    if (savedQuotes) setQuotes(JSON.parse(savedQuotes));
-    
-    // 隨機選一句金句
-    pickRandomQuote(savedQuotes ? JSON.parse(savedQuotes) : defaultQuotes);
-  }, []);
-
-  // 儲存資料到 localStorage
-  useEffect(() => {
-    localStorage.setItem('reading_reflections', JSON.stringify(reflections));
-    localStorage.setItem('reading_quotes', JSON.stringify(quotes));
-  }, [reflections, quotes]);
-
-  const pickRandomQuote = (quoteList) => {
-    if (quoteList && quoteList.length > 0) {
-      const randomIndex = Math.floor(Math.random() * quoteList.length);
-      setCurrentQuote(quoteList[randomIndex]);
+  <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client"
+      }
     }
-  };
+  </script>
+  
+  <style>
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;  
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased selection:bg-emerald-200 selection:text-emerald-900">
+  
+  <div id="root"></div>
 
-  const handleLogout = () => {
-    setCurrentUser(null);
-    setView('login');
-  };
+  <script type="text/babel" data-type="module">
+    import React, { useState, useEffect } from 'react';
+    import { createRoot } from 'react-dom/client';
 
-  // --- 登入畫面 ---
-  if (view === 'login') {
-    return (
-      <div className="min-h-screen bg-amber-50 flex items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
-          <BookOpen className="w-16 h-16 text-emerald-600 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">校園閱讀護照系統</h1>
-          <p className="text-gray-500 mb-8">請選擇您的登入身份以進入系統</p>
-          
-          <div className="space-y-4">
-            <button 
-              onClick={() => { setCurrentUser({ role: 'student', name: '王小明', studentId: 'S112001' }); setView('student_dash'); }}
-              className="w-full flex items-center justify-center space-x-2 bg-emerald-500 hover:bg-emerald-600 text-white p-3 rounded-lg font-medium transition-colors"
-            >
-              <User className="w-5 h-5" />
-              <span>學生登入 (模擬)</span>
-            </button>
-            <button 
-              onClick={() => { setCurrentUser({ role: 'admin', name: '管理員' }); setView('admin_dash'); }}
-              className="w-full flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-lg font-medium transition-colors"
-            >
-              <Settings className="w-5 h-5" />
-              <span>管理者登入 (教師/行政)</span>
-            </button>
+    // 🔴 您的 Google Apps Script 網址 
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8PuqxvXMnDOLizffDYbvjHkkUJc8wvfGlfAUcXSR-XVxawhnzOkmAmcgZ4ir8EzIt/exec"; 
+
+    // --- 共用 UI 元件 ---
+    function LoadingOverlay({ message }) {
+      return (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[200]">
+          <div className="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center max-w-xs mx-4">
+            <i className="fas fa-circle-notch fa-spin text-4xl text-emerald-500 mb-4"></i>
+            <p className="font-bold text-gray-700 text-center">{message}</p>
           </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  // --- 主佈局外觀 ---
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* 導覽列 */}
-      <nav className="bg-emerald-600 text-white shadow-md p-4">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <BookOpen className="w-6 h-6" />
-            <span className="text-xl font-bold">校園閱讀護照</span>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <span className="text-sm bg-emerald-700 px-3 py-1 rounded-full">
-              {currentUser.role === 'admin' ? '管理者模式' : `學生：${currentUser.name}`}
-            </span>
-            <button onClick={handleLogout} className="hover:text-amber-200 transition-colors flex items-center">
-              <LogOut className="w-5 h-5 mr-1" /> 登出
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* 隨機金句顯示區 (全域可見) */}
-      {currentQuote && (
-        <div className="bg-amber-100 border-b border-amber-200 p-3 text-center shadow-inner relative overflow-hidden">
-          <Quote className="absolute text-amber-200/50 w-24 h-24 -top-4 -left-4 -z-0 rotate-180" />
-          <div className="relative z-10 max-w-4xl mx-auto">
-            <p className="text-amber-900 font-medium text-lg">「{currentQuote.zh}」</p>
-            <p className="text-amber-700 text-sm mt-1">{currentQuote.en}</p>
-          </div>
-          <button 
-            onClick={() => pickRandomQuote(quotes)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-amber-600 hover:text-amber-800 p-1"
-            title="換一句"
-          >
-            <RefreshCw className="w-5 h-5" />
-          </button>
-        </div>
-      )}
-
-      {/* 主要內容區 */}
-      <main className="flex-grow max-w-6xl mx-auto w-full p-4 sm:p-6 lg:p-8">
-        {currentUser.role === 'student' ? (
-          <StudentView 
-            view={view} setView={setView} 
-            reflections={reflections} setReflections={setReflections}
-            currentUser={currentUser}
-          />
-        ) : (
-          <AdminView 
-            view={view} setView={setView}
-            reflections={reflections} setReflections={setReflections}
-            quotes={quotes} setQuotes={setQuotes}
-          />
-        )}
-      </main>
-    </div>
-  );
-}
-
-// ==========================================
-// 學生視角元件
-// ==========================================
-function StudentView({ view, setView, reflections, setReflections, currentUser }) {
-  const myReflections = reflections.filter(r => r.studentId === currentUser.studentId);
-  const approvedCount = myReflections.filter(r => r.status === 'approved').length;
-
-  return (
-    <div>
-      <div className="flex space-x-4 mb-6">
-        <button 
-          onClick={() => setView('student_dash')}
-          className={`px-4 py-2 rounded-lg font-medium ${view === 'student_dash' ? 'bg-emerald-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'}`}
-        >
-          我的護照首頁
-        </button>
-        <button 
-          onClick={() => setView('student_submit')}
-          className={`px-4 py-2 rounded-lg font-medium ${view === 'student_submit' ? 'bg-emerald-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'}`}
-        >
-          發表新心得
-        </button>
-      </div>
-
-      {view === 'student_dash' && (
-        <div className="space-y-6">
-          {/* 數據卡片 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-emerald-100 flex items-center space-x-4">
-              <div className="p-3 bg-emerald-100 text-emerald-600 rounded-full">
-                <BookOpen className="w-8 h-8" />
-              </div>
-              <div>
-                <p className="text-gray-500 text-sm">累積閱讀書籍</p>
-                <p className="text-2xl font-bold text-gray-800">{approvedCount} 本</p>
-              </div>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100 flex items-center space-x-4">
-              <div className="p-3 bg-blue-100 text-blue-600 rounded-full">
-                <FileText className="w-8 h-8" />
-              </div>
-              <div>
-                <p className="text-gray-500 text-sm">審核中</p>
-                <p className="text-2xl font-bold text-gray-800">{myReflections.filter(r => r.status === 'pending').length} 篇</p>
-              </div>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-rose-100 flex items-center space-x-4">
-              <div className="p-3 bg-rose-100 text-rose-600 rounded-full">
-                <AlertCircle className="w-8 h-8" />
-              </div>
-              <div>
-                <p className="text-gray-500 text-sm">被退回</p>
-                <p className="text-2xl font-bold text-gray-800">{myReflections.filter(r => r.status === 'returned').length} 篇</p>
-              </div>
-            </div>
-          </div>
-
-          {/* 紀錄列表 */}
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-            <div className="p-4 bg-gray-50 border-b border-gray-100 font-bold text-gray-700">
-              我的心得紀錄
-            </div>
-            {myReflections.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                尚未發表任何心得，趕快去發表吧！
-              </div>
-            ) : (
-              <ul className="divide-y divide-gray-100">
-                {myReflections.map(r => (
-                  <li key={r.id} className="p-4 hover:bg-gray-50 transition-colors">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-bold text-lg text-gray-800">{r.bookTitle}</h4>
-                        <p className="text-sm text-gray-500 mt-1">作者：{r.author} | 出版社：{r.publisher} | {r.pageCount}頁</p>
-                        <span className="inline-block mt-2 text-xs px-2 py-1 bg-gray-200 text-gray-600 rounded">
-                          {r.type === 'text' ? '📝 文字心得' : '📸 照片心得'}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                          r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
-                          r.status === 'returned' ? 'bg-rose-100 text-rose-700' :
-                          'bg-amber-100 text-amber-700'
-                        }`}>
-                          {r.status === 'approved' ? '✓ 已通過' : r.status === 'returned' ? '✗ 需修改' : '⏳ 審核中'}
-                        </span>
-                        <div className="text-xs text-gray-400 mt-2">{new Date(r.date).toLocaleDateString()}</div>
-                      </div>
-                    </div>
-                    {r.status === 'returned' && r.returnReason && (
-                      <div className="mt-3 p-3 bg-rose-50 border-l-4 border-rose-400 text-sm text-rose-800 rounded-r-md">
-                        <strong>老師退回原因：</strong>{r.returnReason}
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      )}
-
-      {view === 'student_submit' && (
-        <StudentSubmitForm 
-          currentUser={currentUser} 
-          reflections={reflections} 
-          setReflections={setReflections} 
-          setView={setView}
-        />
-      )}
-    </div>
-  );
-}
-
-// 發表心得表單元件
-function StudentSubmitForm({ currentUser, reflections, setReflections, setView }) {
-  const [formData, setFormData] = useState({
-    bookTitle: '', author: '', publisher: '', pageCount: '', 
-    type: 'text', content: ''
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const newReflection = {
-      ...formData,
-      id: Date.now().toString(),
-      studentId: currentUser.studentId,
-      studentName: currentUser.name,
-      status: 'pending',
-      date: new Date().toISOString()
-    };
-    setReflections([newReflection, ...reflections]);
-    alert('心得已成功送出，等待老師審核！');
-    setView('student_dash');
-  };
-
-  return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 max-w-3xl mx-auto">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-        <Edit className="w-6 h-6 mr-2 text-emerald-500" />
-        發表閱讀心得
-      </h2>
-      <form onSubmit={handleSubmit} className="space-y-6">
-        
-        {/* 必填書籍資訊區 */}
-        <div className="bg-gray-50 p-4 rounded-xl space-y-4 border border-gray-100">
-          <h3 className="font-semibold text-gray-700 mb-2 border-b pb-2">圖書資訊 (必填)</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">書名 <span className="text-red-500">*</span></label>
-              <input type="text" required value={formData.bookTitle} onChange={e => setFormData({...formData, bookTitle: e.target.value})}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" placeholder="例如：哈利波特" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">作者 <span className="text-red-500">*</span></label>
-              <input type="text" required value={formData.author} onChange={e => setFormData({...formData, author: e.target.value})}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" placeholder="例如：J.K. 羅琳" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">出版社 <span className="text-red-500">*</span></label>
-              <input type="text" required value={formData.publisher} onChange={e => setFormData({...formData, publisher: e.target.value})}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" placeholder="例如：皇冠" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">頁數 <span className="text-red-500">*</span></label>
-              <input type="number" required min="1" value={formData.pageCount} onChange={e => setFormData({...formData, pageCount: e.target.value})}
-                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" placeholder="例如：350" />
+    function CustomModal({ modal, onClose }) {
+      if (!modal.isOpen) return null;
+      return (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+            <h3 className="text-lg font-bold mb-3 text-gray-800">
+              {modal.type === 'confirm' ? <><i className="fas fa-question-circle text-amber-500 mr-2"></i>請確認</> : <><i className="fas fa-info-circle text-blue-500 mr-2"></i>系統提示</>}
+            </h3>
+            <p className="text-gray-600 mb-6 leading-relaxed">{modal.message}</p>
+            <div className="flex justify-end space-x-3">
+              {modal.type === 'confirm' && (
+                <button onClick={onClose} className="px-5 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors">取消</button>
+              )}
+              <button 
+                onClick={() => { if(modal.onConfirm) modal.onConfirm(); onClose(); }} 
+                className={`px-5 py-2 text-white font-medium rounded-lg transition-colors ${modal.type === 'confirm' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-emerald-600 hover:bg-emerald-700'}`}
+              >確定</button>
             </div>
           </div>
         </div>
+      );
+    }
 
-        {/* 心得類型與內容 */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            心得類型 <span className="text-red-500">*</span>
-            <span className="text-emerald-600 font-normal ml-2 bg-emerald-50 px-2 py-0.5 rounded text-xs">
-              (文字心得或照片心得，二選一)
-            </span>
-          </label>
-          <div className="flex space-x-4 mb-4">
-            <label className={`flex-1 cursor-pointer border rounded-xl p-4 flex flex-col items-center justify-center transition-all ${formData.type === 'text' ? 'border-emerald-500 bg-emerald-50 shadow-inner' : 'border-gray-200 hover:bg-gray-50'}`}>
-              <input type="radio" name="type" value="text" className="sr-only" 
-                checked={formData.type === 'text'} onChange={() => setFormData({...formData, type: 'text', content: ''})} />
-              <FileText className={`w-8 h-8 mb-2 ${formData.type === 'text' ? 'text-emerald-600' : 'text-gray-400'}`} />
-              <span className={`font-medium ${formData.type === 'text' ? 'text-emerald-800' : 'text-gray-600'}`}>文字心得</span>
-            </label>
-            <label className={`flex-1 cursor-pointer border rounded-xl p-4 flex flex-col items-center justify-center transition-all ${formData.type === 'photo' ? 'border-emerald-500 bg-emerald-50 shadow-inner' : 'border-gray-200 hover:bg-gray-50'}`}>
-              <input type="radio" name="type" value="photo" className="sr-only" 
-                checked={formData.type === 'photo'} onChange={() => setFormData({...formData, type: 'photo', content: ''})} />
-              <ImageIcon className={`w-8 h-8 mb-2 ${formData.type === 'photo' ? 'text-emerald-600' : 'text-gray-400'}`} />
-              <span className={`font-medium ${formData.type === 'photo' ? 'text-emerald-800' : 'text-gray-600'}`}>照片心得 (學習單)</span>
-            </label>
-          </div>
+    // --- 主應用程式 App 元件 ---
+    function App() {
+      const [isDbReady, setIsDbReady] = useState(false);
+      const [isProcessing, setIsProcessing] = useState(false);
+      const [currentUser, setCurrentUser] = useState(null); 
+      const [view, setView] = useState('login'); 
+      const [modal, setModal] = useState({ isOpen: false, type: 'info', message: '', onConfirm: null });
+      
+      const [reflections, setReflections] = useState([]);
+      const [quotes, setQuotes] = useState([]);
+      const [currentQuote, setCurrentQuote] = useState(null);
+      const [classPasswords, setClassPasswords] = useState({});
+      const [adminPassword, setAdminPassword] = useState('admin');
 
-          {formData.type === 'text' ? (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">心得內容 (至少50字) <span className="text-red-500">*</span></label>
-              <textarea required rows="6" value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" 
-                placeholder="寫下你從這本書學到了什麼？最喜歡哪個部分？"
-              ></textarea>
-              <p className="text-right text-sm text-gray-500 mt-1">字數：{formData.content.length}</p>
+      const showAlert = (message) => setModal({ isOpen: true, type: 'info', message, onConfirm: null });
+      const showConfirm = (message, onConfirm) => setModal({ isOpen: true, type: 'confirm', message, onConfirm });
+      const closeModal = () => setModal({ ...modal, isOpen: false });
+
+      const fetchSheetData = async () => {
+        try {
+          const res = await fetch(SCRIPT_URL);
+          const data = await res.json();
+          if (data.records) setReflections(data.records.sort((a, b) => Number(b.timestamp) - Number(a.timestamp)));
+          if (data.config) {
+            if (data.config.sloganList) {
+              setQuotes(data.config.sloganList);
+              if (data.config.sloganList.length > 0) {
+                setCurrentQuote(data.config.sloganList[Math.floor(Math.random() * data.config.sloganList.length)]);
+              }
+            }
+            if (data.config.classPasswords) setClassPasswords(data.config.classPasswords);
+            if (data.config.adminPassword) setAdminPassword(data.config.adminPassword);
+          }
+        } catch (error) {
+          console.error("讀取失敗:", error);
+          showAlert("無法連接到 Google 試算表，請確認網址與權限。");
+        } finally {
+          setIsDbReady(true);
+        }
+      };
+
+      const sendSheetData = async (payloadObj, successMessage) => {
+        setIsProcessing(true);
+        try {
+          const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payloadObj) });
+          const result = await res.json();
+          if (result.success) {
+            await fetchSheetData(); 
+            if (successMessage) showAlert(successMessage);
+            return true;
+          } else throw new Error(result.error || "未知錯誤");
+        } catch (error) {
+          console.error("API 錯誤:", error);
+          showAlert("資料傳送失敗，請稍後再試。");
+          return false;
+        } finally {
+          setIsProcessing(false);
+        }
+      };
+
+      useEffect(() => { fetchSheetData(); }, []);
+
+      const handleAddReflection = async (formData) => {
+        const payload = { classId: currentUser.classId, name: currentUser.name, ...formData };
+        if (await sendSheetData({ action: 'addRecord', payload }, '心得已成功送出！')) setView('student_dash');
+      };
+      const handleApproveReflection = async (id) => { await sendSheetData({ action: 'approveRecord', id }, '審核通過！'); };
+      const handleDeleteReflection = async (id) => { await sendSheetData({ action: 'deleteRecord', id }, '心得已刪除！'); };
+      const handleSaveAllQuotes = async (newQuotesArray, message) => { await sendSheetData({ action: 'updateConfig', payload: newQuotesArray }, message); };
+      const handleSavePasswords = async (newAdminPw, newClassPws) => {
+        await sendSheetData({ action: 'updatePasswords', payload: { adminPassword: newAdminPw, classPasswords: newClassPws } }, '權限與密碼已更新！');
+      };
+
+      if (view === 'login' || !currentUser) {
+        return (
+            <>
+                {isProcessing && <LoadingOverlay message="系統處理中..." />}
+                <CustomModal modal={modal} onClose={closeModal} />
+                <LoginScreen isDbReady={isDbReady} isProcessing={isProcessing} classPasswords={classPasswords} adminPassword={adminPassword} setCurrentUser={setCurrentUser} setView={setView} showAlert={showAlert} />
+            </>
+        );
+      }
+
+      return (
+        <div className="min-h-screen flex flex-col relative">
+          {isProcessing && <LoadingOverlay message="資料同步中..." />}
+          <CustomModal modal={modal} onClose={closeModal} />
+
+          <nav className="bg-emerald-600 text-white shadow-md p-4 sticky top-0 z-40">
+            <div className="max-w-6xl mx-auto flex flex-wrap gap-4 justify-between items-center">
+              <div className="flex items-center space-x-2">
+                <i className="fas fa-book-reader text-2xl"></i>
+                <span className="text-xl font-bold">校園閱讀護照</span>
+              </div>
+              <div className="flex items-center space-x-4">
+                <span className="text-sm bg-emerald-700 px-3 py-1.5 rounded-full shadow-inner font-medium">
+                  {currentUser.role === 'admin' ? '👑 系統管理員' : currentUser.role === 'teacher' ? `👩‍🏫 導師 (${currentUser.classId})` : `👨‍🎓 ${currentUser.classId} ${currentUser.name}`}
+                </span>
+                <button onClick={() => { setCurrentUser(null); setView('login'); }} className="hover:text-amber-200 font-medium"><i className="fas fa-sign-out-alt mr-1"></i> 登出</button>
+              </div>
             </div>
-          ) : (
-            <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center bg-gray-50">
-              <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-600 mb-2">點擊或拖曳上傳學習單/照片</p>
-              <input type="file" accept="image/*" className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer" />
-              <p className="text-xs text-gray-400 mt-2">提示：此為預覽版，不會真實上傳檔案。請隨意選擇模擬。</p>
+          </nav>
+
+          {currentQuote && currentUser.role !== 'admin' && (
+            <div className="bg-amber-50 border-b border-amber-200 p-6 text-center">
+              <p className="text-amber-900 font-bold text-xl mb-1">「{currentQuote.title}」</p>
+              {currentQuote.sub && <p className="text-amber-700 text-sm">{currentQuote.sub}</p>}
             </div>
           )}
-        </div>
 
-        <button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-md">
-          送出審核
-        </button>
-      </form>
-    </div>
-  );
-}
-
-// ==========================================
-// 管理者視角元件
-// ==========================================
-function AdminView({ view, setView, reflections, setReflections, quotes, setQuotes }) {
-  // 視圖切換按鈕
-  const NavButton = ({ targetView, icon: Icon, label }) => (
-    <button 
-      onClick={() => setView(targetView)}
-      className={`flex items-center px-4 py-2 rounded-lg font-medium transition-colors ${view === targetView ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100 shadow-sm border border-gray-200'}`}
-    >
-      <Icon className="w-4 h-4 mr-2" /> {label}
-    </button>
-  );
-
-  return (
-    <div>
-      <div className="flex flex-wrap gap-3 mb-6">
-        <NavButton targetView="admin_dash" icon={Check} label="心得審核管理" />
-        <NavButton targetView="admin_quotes" icon={Quote} label="雙語金句管理" />
-        <NavButton targetView="admin_data" icon={Save} label="系統資料匯出/匯入" />
-      </div>
-
-      {view === 'admin_dash' && <AdminDashboard reflections={reflections} setReflections={setReflections} />}
-      {view === 'admin_quotes' && <AdminQuotes quotes={quotes} setQuotes={setQuotes} />}
-      {view === 'admin_data' && <AdminData reflections={reflections} quotes={quotes} setReflections={setReflections} setQuotes={setQuotes} />}
-    </div>
-  );
-}
-
-// 1. 心得審核管理
-function AdminDashboard({ reflections, setReflections }) {
-  const [filter, setFilter] = useState('pending'); // all, pending, approved, returned
-  const [editingItem, setEditingItem] = useState(null); // 用於編修
-  const [returningItem, setReturningItem] = useState(null); // 用於填寫退回原因
-  const [returnMsg, setReturnMsg] = useState('');
-
-  const filteredData = reflections.filter(r => filter === 'all' || r.status === filter);
-
-  // 審核動作
-  const handleApprove = (id) => {
-    setReflections(reflections.map(r => r.id === id ? { ...r, status: 'approved', returnReason: '' } : r));
-  };
-
-  const handleReturnSubmit = () => {
-    if (!returnMsg.trim()) { alert('請填寫退回原因！'); return; }
-    setReflections(reflections.map(r => r.id === returningItem.id ? { ...r, status: 'returned', returnReason: returnMsg } : r));
-    setReturningItem(null);
-    setReturnMsg('');
-  };
-
-  const handleDelete = (id) => {
-    if (confirm('確定要永久刪除這筆心得嗎？無法復原。')) {
-      setReflections(reflections.filter(r => r.id !== id));
-    }
-  };
-
-  const handleEditSave = (e) => {
-    e.preventDefault();
-    setReflections(reflections.map(r => r.id === editingItem.id ? editingItem : r));
-    setEditingItem(null);
-    alert('編修已儲存');
-  };
-
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      {/* 列表過濾器 */}
-      <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center flex-wrap gap-4">
-        <h2 className="text-xl font-bold text-gray-800">學生心得列表</h2>
-        <div className="flex space-x-2">
-          {['pending', 'approved', 'returned', 'all'].map(status => (
-            <button key={status} onClick={() => setFilter(status)} className={`px-3 py-1 text-sm rounded-full ${filter === status ? 'bg-indigo-100 text-indigo-700 font-bold' : 'bg-white text-gray-500 border hover:bg-gray-50'}`}>
-              {status === 'pending' ? '⏳ 待審核' : status === 'approved' ? '✓ 已通過' : status === 'returned' ? '✗ 退回' : '全部'}
-              <span className="ml-1 text-xs opacity-70">({reflections.filter(r => status === 'all' || r.status === status).length})</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 列表內容 */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-100 text-gray-600 text-sm">
-              <th className="p-3 border-b">日期/學生</th>
-              <th className="p-3 border-b">書籍資訊</th>
-              <th className="p-3 border-b w-1/3">心得內容</th>
-              <th className="p-3 border-b">狀態</th>
-              <th className="p-3 border-b text-center">操作管理</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {filteredData.length === 0 ? (
-              <tr><td colSpan="5" className="p-8 text-center text-gray-500">目前沒有相關資料</td></tr>
+          <main className="flex-grow max-w-6xl mx-auto w-full p-4 sm:p-6">
+            {currentUser.role === 'student' ? (
+              <StudentView view={view} setView={setView} reflections={reflections} currentUser={currentUser} handleAddReflection={handleAddReflection} />
             ) : (
-              filteredData.map(r => (
-                <tr key={r.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="p-3 align-top">
-                    <div className="text-sm font-bold text-gray-800">{r.studentName}</div>
-                    <div className="text-xs text-gray-500">{r.studentId}</div>
-                    <div className="text-xs text-gray-400 mt-1">{new Date(r.date).toLocaleDateString()}</div>
-                  </td>
-                  <td className="p-3 align-top">
-                    <div className="font-bold text-indigo-900">{r.bookTitle}</div>
-                    <div className="text-xs text-gray-600">作：{r.author}</div>
-                    <div className="text-xs text-gray-600">版：{r.publisher}</div>
-                    <div className="text-xs text-gray-600">{r.pageCount} 頁</div>
-                  </td>
-                  <td className="p-3 align-top">
-                    <span className={`inline-block mb-1 text-xs px-2 py-0.5 rounded ${r.type === 'text' ? 'bg-blue-50 text-blue-700 border border-blue-100' : 'bg-purple-50 text-purple-700 border border-purple-100'}`}>
-                      {r.type === 'text' ? '文字心得' : '照片/學習單'}
-                    </span>
-                    <div className="text-sm text-gray-700 line-clamp-3" title={r.content}>
-                      {r.type === 'text' ? r.content : '[(附檔) 點擊編輯可查看詳情]'}
-                    </div>
-                    {r.status === 'returned' && (
-                      <div className="mt-1 text-xs text-rose-600 font-medium">退回原因：{r.returnReason}</div>
-                    )}
-                  </td>
-                  <td className="p-3 align-top">
-                    <span className={`px-2 py-1 text-xs font-bold rounded-full ${r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : r.status === 'returned' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700'}`}>
-                      {r.status === 'approved' ? '已通過' : r.status === 'returned' ? '已退回' : '待審核'}
-                    </span>
-                  </td>
-                  <td className="p-3 align-top">
-                    <div className="flex flex-col gap-1 items-center">
-                      {r.status === 'pending' && (
-                        <div className="flex space-x-1">
-                          <button onClick={() => handleApprove(r.id)} className="p-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white rounded" title="核准">
-                            <Check className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => setReturningItem(r)} className="p-1.5 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white rounded" title="退回">
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-                      <div className="flex space-x-1 mt-1">
-                        <button onClick={() => setEditingItem({...r})} className="p-1.5 text-blue-600 hover:bg-blue-100 rounded" title="編修">
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => handleDelete(r.id)} className="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded" title="刪除">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              ))
+              <AdminView view={view} setView={setView} reflections={reflections} quotes={quotes} currentUser={currentUser} classPasswords={classPasswords} adminPassword={adminPassword} handleApproveReflection={handleApproveReflection} handleDeleteReflection={handleDeleteReflection} handleSaveAllQuotes={handleSaveAllQuotes} handleSavePasswords={handleSavePasswords} showConfirm={showConfirm} showAlert={showAlert} />
             )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* 退回原因 Modal */}
-      {returningItem && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">填寫退回原因</h3>
-            <p className="text-sm text-gray-500 mb-2">正在退回 {returningItem.studentName} 的《{returningItem.bookTitle}》</p>
-            <textarea 
-              autoFocus rows="3" 
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-rose-500 outline-none"
-              placeholder="請簡述需要修改的地方（例如：字數不足、內容偏題等）"
-              value={returnMsg} onChange={e => setReturnMsg(e.target.value)}
-            />
-            <div className="flex justify-end space-x-3 mt-4">
-              <button onClick={() => {setReturningItem(null); setReturnMsg('');}} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">取消</button>
-              <button onClick={handleReturnSubmit} className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700">確認退回</button>
-            </div>
-          </div>
+          </main>
         </div>
-      )}
+      );
+    }
 
-      {/* 編修 Modal */}
-      {editingItem && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-              <Edit className="w-5 h-5 mr-2 text-indigo-600" /> 編修心得資料
-            </h3>
-            <form onSubmit={handleEditSave} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+    // --- 登入畫面 ---
+    function LoginScreen({ isDbReady, isProcessing, classPasswords, adminPassword, setCurrentUser, setView, showAlert }) {
+      const [loginTab, setLoginTab] = useState('student');
+      const [selectedClass, setSelectedClass] = useState('');
+      const [studentName, setStudentName] = useState('');
+      const [passwordInput, setPasswordInput] = useState('');
+      
+      const availableClasses = Object.keys(classPasswords);
+      useEffect(() => { if (availableClasses.length > 0 && !selectedClass) setSelectedClass(availableClasses[0]); }, [availableClasses, selectedClass]);
+
+      const handleLogin = (e) => {
+        e.preventDefault();
+        if (!isDbReady) return showAlert("系統載入中，請稍候。");
+
+        if (loginTab === 'student') {
+          if (!selectedClass || !studentName.trim()) return showAlert("請選擇班級並輸入姓名！");
+          setCurrentUser({ role: 'student', classId: selectedClass, name: studentName.trim() });
+          setView('student_dash');
+        } else if (loginTab === 'teacher') {
+          if (passwordInput !== classPasswords[selectedClass]) return showAlert("導師密碼錯誤！");
+          setCurrentUser({ role: 'teacher', classId: selectedClass });
+          setView('admin_dash'); 
+        } else if (loginTab === 'admin') {
+          if (passwordInput !== adminPassword) return showAlert("管理員密碼錯誤！");
+          setCurrentUser({ role: 'admin' });
+          setView('admin_dash');
+        }
+      };
+
+      return (
+        <div className="min-h-screen bg-emerald-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border">
+            <div className="bg-emerald-600 p-8 text-center text-white relative">
+              <i className="fas fa-book-open text-4xl mb-4"></i>
+              <h1 className="text-2xl font-bold">校園閱讀護照系統</h1>
+            </div>
+            <div className="flex border-b">
+              <button type="button" onClick={() => setLoginTab('student')} className={`flex-1 py-4 font-bold text-sm ${loginTab === 'student' ? 'text-emerald-600 border-b-2 border-emerald-600 bg-emerald-50' : 'text-gray-500 hover:bg-gray-50'}`}>👨‍🎓 學生</button>
+              <button type="button" onClick={() => setLoginTab('teacher')} className={`flex-1 py-4 font-bold text-sm ${loginTab === 'teacher' ? 'text-indigo-600 border-b-2 border-indigo-600 bg-indigo-50' : 'text-gray-500 hover:bg-gray-50'}`}>👩‍🏫 導師</button>
+              <button type="button" onClick={() => setLoginTab('admin')} className={`flex-1 py-4 font-bold text-sm ${loginTab === 'admin' ? 'text-amber-600 border-b-2 border-amber-600 bg-amber-50' : 'text-gray-500 hover:bg-gray-50'}`}>👑 管理員</button>
+            </div>
+            <form onSubmit={handleLogin} className="p-6 space-y-5">
+              {(loginTab === 'student' || loginTab === 'teacher') && (
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1">書名</label>
-                  <input type="text" required value={editingItem.bookTitle} onChange={e => setEditingItem({...editingItem, bookTitle: e.target.value})} className="w-full p-2 border rounded" />
+                  <label className="block text-sm font-bold text-gray-700 mb-2">選擇班級</label>
+                  {availableClasses.length === 0 ? <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm">尚未建立班級</div> : (
+                    <select value={selectedClass} onChange={e => setSelectedClass(e.target.value)} className="w-full p-3 border rounded-lg focus:ring-emerald-500">
+                      {availableClasses.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  )}
                 </div>
+              )}
+              {loginTab === 'student' && availableClasses.length > 0 && (
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1">作者</label>
-                  <input type="text" value={editingItem.author} onChange={e => setEditingItem({...editingItem, author: e.target.value})} className="w-full p-2 border rounded" />
+                  <label className="block text-sm font-bold text-gray-700 mb-2">學生姓名</label>
+                  <input type="text" required value={studentName} onChange={e => setStudentName(e.target.value)} className="w-full p-3 border rounded-lg" placeholder="真實姓名" />
                 </div>
+              )}
+              {(loginTab === 'teacher' || loginTab === 'admin') && (
                 <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1">出版社</label>
-                  <input type="text" value={editingItem.publisher} onChange={e => setEditingItem({...editingItem, publisher: e.target.value})} className="w-full p-2 border rounded" />
+                  <label className="block text-sm font-bold text-gray-700 mb-2">輸入密碼</label>
+                  <input type="password" required value={passwordInput} onChange={e => setPasswordInput(e.target.value)} className="w-full p-3 border rounded-lg" placeholder="請輸入密碼" />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-600 mb-1">頁數</label>
-                  <input type="number" value={editingItem.pageCount} onChange={e => setEditingItem({...editingItem, pageCount: e.target.value})} className="w-full p-2 border rounded" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">心得內容</label>
-                <textarea rows="6" value={editingItem.content} onChange={e => setEditingItem({...editingItem, content: e.target.value})} className="w-full p-2 border rounded outline-none focus:border-indigo-500"></textarea>
-              </div>
-              <div className="bg-gray-50 p-3 rounded border">
-                <label className="block text-xs font-bold text-gray-600 mb-2">更改狀態</label>
-                <select value={editingItem.status} onChange={e => setEditingItem({...editingItem, status: e.target.value})} className="w-full p-2 border rounded bg-white">
-                  <option value="pending">待審核</option>
-                  <option value="approved">已通過</option>
-                  <option value="returned">退回</option>
-                </select>
-              </div>
-              
-              <div className="flex justify-end space-x-3 pt-4 border-t">
-                <button type="button" onClick={() => setEditingItem(null)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">取消</button>
-                <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">儲存變更</button>
-              </div>
+              )}
+              <button type="submit" disabled={!isDbReady || isProcessing} className="w-full py-3 mt-2 text-white font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50">
+                {isProcessing ? '登入中...' : '登入系統'}
+              </button>
             </form>
           </div>
         </div>
-      )}
-    </div>
-  );
-}
-
-// 2. 雙語金句管理
-function AdminQuotes({ quotes, setQuotes }) {
-  const [newQuote, setNewQuote] = useState({ zh: '', en: '' });
-  const [editingId, setEditingId] = useState(null);
-
-  const handleAdd = (e) => {
-    e.preventDefault();
-    if (!newQuote.zh || !newQuote.en) return;
-    setQuotes([{ id: Date.now().toString(), ...newQuote }, ...quotes]);
-    setNewQuote({ zh: '', en: '' });
-  };
-
-  const handleDelete = (id) => {
-    if (confirm('確定刪除此句？')) {
-      setQuotes(quotes.filter(q => q.id !== id));
+      );
     }
-  };
 
-  const handleEditSave = (id, newZh, newEn) => {
-    setQuotes(quotes.map(q => q.id === id ? { ...q, zh: newZh, en: newEn } : q));
-    setEditingId(null);
-  };
+    // --- 學生介面 ---
+    function StudentView({ view, setView, reflections, currentUser, handleAddReflection }) {
+      const myReflections = reflections.filter(r => r.classId === currentUser.classId && r.name === currentUser.name);
+      const approvedCount = myReflections.filter(r => r.status === 'approved').length;
 
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div className="p-6 bg-indigo-50 border-b border-indigo-100">
-        <h2 className="text-xl font-bold text-indigo-900 flex items-center mb-2">
-          <Quote className="w-6 h-6 mr-2" /> 雙語閱讀金句管理
-        </h2>
-        <p className="text-sm text-indigo-700 mb-4">
-          新增或編修金句，系統將模擬寫入雲端試算表 (目前儲存於瀏覽器)。這些句子會在學生端隨機出現。
-        </p>
-        
-        {/* 新增金句表單 */}
-        <form onSubmit={handleAdd} className="bg-white p-4 rounded-lg shadow-sm flex flex-col md:flex-row gap-3 items-start md:items-center">
-          <div className="flex-1 w-full">
-            <input type="text" placeholder="中文句子" required value={newQuote.zh} onChange={e => setNewQuote({...newQuote, zh: e.target.value})} className="w-full p-2 border rounded-md text-sm focus:ring-1 focus:ring-indigo-500 outline-none" />
+      return (
+        <div>
+          <div className="flex space-x-3 mb-6">
+            <button onClick={() => setView('student_dash')} className={`px-5 py-2.5 rounded-xl font-bold ${view === 'student_dash' ? 'bg-emerald-600 text-white' : 'bg-white text-gray-600 border'}`}>我的首頁</button>
+            <button onClick={() => setView('student_submit')} className={`px-5 py-2.5 rounded-xl font-bold ${view === 'student_submit' ? 'bg-emerald-600 text-white' : 'bg-white text-gray-600 border'}`}>發表新心得</button>
           </div>
-          <div className="flex-1 w-full">
-            <input type="text" placeholder="英文句子 (English)" required value={newQuote.en} onChange={e => setNewQuote({...newQuote, en: e.target.value})} className="w-full p-2 border rounded-md text-sm focus:ring-1 focus:ring-indigo-500 outline-none" />
-          </div>
-          <button type="submit" className="w-full md:w-auto px-4 py-2 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700 flex-shrink-0">
-            新增寫入
-          </button>
-        </form>
-      </div>
 
-      <ul className="divide-y divide-gray-100 p-2">
-        {quotes.map(q => (
-          <li key={q.id} className="p-4 hover:bg-gray-50 flex flex-col md:flex-row justify-between md:items-center gap-4">
-            {editingId === q.id ? (
-              <form 
-                className="flex-1 flex flex-col md:flex-row gap-2"
-                onSubmit={(e) => { e.preventDefault(); handleEditSave(q.id, e.target.zh.value, e.target.en.value); }}
-              >
-                <input name="zh" defaultValue={q.zh} className="flex-1 p-1 border rounded text-sm" />
-                <input name="en" defaultValue={q.en} className="flex-1 p-1 border rounded text-sm" />
-                <div className="flex space-x-2">
-                  <button type="submit" className="px-3 py-1 bg-green-500 text-white rounded text-sm">儲存</button>
-                  <button type="button" onClick={() => setEditingId(null)} className="px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm">取消</button>
+          {view === 'student_dash' && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 gap-5">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border text-center">
+                  <p className="text-gray-500 font-medium mb-1">審核通過</p>
+                  <p className="text-4xl font-black text-gray-800">{approvedCount}</p>
                 </div>
-              </form>
+                <div className="bg-white p-6 rounded-2xl shadow-sm border text-center">
+                  <p className="text-gray-500 font-medium mb-1">總共提交</p>
+                  <p className="text-4xl font-black text-gray-800">{myReflections.length}</p>
+                </div>
+              </div>
+              <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
+                <div className="p-5 bg-gray-50 border-b"><h3 className="font-bold">我的紀錄</h3></div>
+                <ul className="divide-y">
+                  {myReflections.map(r => (
+                    <li key={r.id} className="p-5 flex justify-between items-center">
+                      <div><h4 className="font-bold">{r.bookTitle}</h4><p className="text-sm text-gray-500">{r.author}</p></div>
+                      <span className={`px-3 py-1 rounded-full text-sm font-bold ${r.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                        {r.status === 'approved' ? '已通過' : '審核中'}
+                      </span>
+                    </li>
+                  ))}
+                  {myReflections.length === 0 && <li className="p-10 text-center text-gray-400">尚未發表心得</li>}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {view === 'student_submit' && <StudentSubmitForm handleAddReflection={handleAddReflection} />}
+        </div>
+      );
+    }
+
+    // --- 學生提交表單 ---
+    function StudentSubmitForm({ handleAddReflection }) {
+      const [formData, setFormData] = useState({ bookTitle: '', author: '', publisher: '', pages: '', reviewType: 'text', review: '', image: '' });
+      const handleSubmit = (e) => { e.preventDefault(); handleAddReflection(formData); };
+      const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) { const reader = new FileReader(); reader.onloadend = () => setFormData({...formData, image: reader.result}); reader.readAsDataURL(file); }
+      };
+
+      return (
+        <div className="bg-white rounded-2xl shadow-sm border p-6 max-w-2xl mx-auto">
+          <h2 className="text-2xl font-bold mb-6 border-b pb-4">發表閱讀心得</h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <input type="text" required placeholder="書名" onChange={e => setFormData({...formData, bookTitle: e.target.value})} className="w-full p-3 border rounded-lg" />
+            <div className="grid grid-cols-3 gap-4">
+              <input type="text" required placeholder="作者" onChange={e => setFormData({...formData, author: e.target.value})} className="w-full p-3 border rounded-lg" />
+              <input type="text" required placeholder="出版社" onChange={e => setFormData({...formData, publisher: e.target.value})} className="w-full p-3 border rounded-lg" />
+              <input type="number" required placeholder="頁數" onChange={e => setFormData({...formData, pages: e.target.value})} className="w-full p-3 border rounded-lg" />
+            </div>
+            <div className="flex space-x-4 mb-4">
+              <label className="flex-1 cursor-pointer p-3 border rounded-lg text-center"><input type="radio" name="rt" className="mr-2" checked={formData.reviewType === 'text'} onChange={() => setFormData({...formData, reviewType: 'text'})}/>文字心得</label>
+              <label className="flex-1 cursor-pointer p-3 border rounded-lg text-center"><input type="radio" name="rt" className="mr-2" checked={formData.reviewType === 'photo'} onChange={() => setFormData({...formData, reviewType: 'photo'})}/>照片學習單</label>
+            </div>
+            {formData.reviewType === 'text' ? (
+              <textarea required rows="5" placeholder="輸入心得..." onChange={e => setFormData({...formData, review: e.target.value})} className="w-full p-3 border rounded-lg"></textarea>
             ) : (
+              <div>
+                <input type="file" accept="image/*" required onChange={handleImageChange} className="w-full p-2 border rounded-lg" />
+                {formData.image && <img src={formData.image} alt="預覽" className="mt-2 max-h-48 rounded" />}
+              </div>
+            )}
+            <button type="submit" className="w-full bg-emerald-600 text-white font-bold py-3 rounded-lg hover:bg-emerald-700">送出審核</button>
+          </form>
+        </div>
+      );
+    }
+
+    // --- 管理員/導師介面 ---
+    function AdminView({ view, setView, reflections, quotes, currentUser, classPasswords, adminPassword, handleApproveReflection, handleDeleteReflection, handleSaveAllQuotes, handleSavePasswords, showConfirm, showAlert }) {
+      const visibleReflections = currentUser.role === 'teacher' ? reflections.filter(r => r.classId === currentUser.classId) : reflections;
+      const isAdmin = currentUser.role === 'admin';
+
+      return (
+        <div>
+          <div className="flex flex-wrap gap-3 mb-6 bg-white p-3 rounded-2xl shadow-sm border">
+            <button onClick={() => setView('admin_dash')} className={`px-4 py-2 rounded-lg font-bold ${view === 'admin_dash' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}>審核管理</button>
+            {isAdmin && (
               <>
-                <div className="flex-1">
-                  <p className="font-bold text-gray-800 text-lg">「{q.zh}」</p>
-                  <p className="text-gray-500 text-sm mt-1">{q.en}</p>
-                </div>
-                <div className="flex space-x-2 flex-shrink-0">
-                  <button onClick={() => setEditingId(q.id)} className="p-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg flex items-center text-sm font-medium">
-                    <Edit className="w-4 h-4 mr-1" /> 編修
-                  </button>
-                  <button onClick={() => handleDelete(q.id)} className="p-2 text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg flex items-center text-sm font-medium">
-                    <Trash2 className="w-4 h-4 mr-1" /> 刪除
-                  </button>
-                </div>
+                <button onClick={() => setView('admin_quotes')} className={`px-4 py-2 rounded-lg font-bold ${view === 'admin_quotes' ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-600'}`}>標語設定</button>
+                <button onClick={() => setView('admin_passwords')} className={`px-4 py-2 rounded-lg font-bold ${view === 'admin_passwords' ? 'bg-rose-600 text-white' : 'bg-gray-100 text-gray-600'}`}>班級與密碼管理</button>
               </>
             )}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-// 3. 系統資料匯入/匯出
-function AdminData({ reflections, quotes, setReflections, setQuotes }) {
-  const fileInputRef = useRef(null);
-
-  const handleExport = () => {
-    const dataStr = JSON.stringify({ reflections, quotes }, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `ReadingPassport_Backup_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleImport = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const data = JSON.parse(event.target.result);
-        if (data.reflections && data.quotes) {
-          if (confirm('即將覆蓋現有資料，確定要匯入嗎？')) {
-            setReflections(data.reflections);
-            setQuotes(data.quotes);
-            alert('資料匯入成功！');
-          }
-        } else {
-          alert('檔案格式錯誤，找不到必要的資料結構。');
-        }
-      } catch (err) {
-        alert('解析檔案失敗，請確保是正確的 JSON 檔案。');
-      }
-      // 重置 input，允許重複選取相同檔案
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-    reader.readAsText(file);
-  };
-
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden max-w-2xl mx-auto">
-      <div className="p-6 bg-slate-50 border-b border-slate-200">
-        <h2 className="text-xl font-bold text-slate-800 mb-2">系統資料備份與還原</h2>
-        <p className="text-sm text-slate-600">將所有學生的閱讀心得及系統雙語金句匯出為 JSON 檔案，以供備份或轉移。您也可以隨時匯入先前的備份檔案。</p>
-      </div>
-      
-      <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* 匯出區塊 */}
-        <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-indigo-200 rounded-xl bg-indigo-50 hover:bg-indigo-100 transition-colors">
-          <Download className="w-12 h-12 text-indigo-500 mb-4" />
-          <h3 className="font-bold text-indigo-900 mb-1">匯出資料 (備份)</h3>
-          <p className="text-xs text-indigo-700 text-center mb-4">下載包含 {reflections.length} 篇心得與 {quotes.length} 句金句的檔案</p>
-          <button onClick={handleExport} className="w-full py-2 bg-indigo-600 text-white rounded-lg font-medium shadow-sm hover:bg-indigo-700">
-            下載 JSON 備份檔
-          </button>
-        </div>
-
-        {/* 匯入區塊 */}
-        <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-emerald-200 rounded-xl bg-emerald-50 hover:bg-emerald-100 transition-colors relative">
-          <Upload className="w-12 h-12 text-emerald-500 mb-4" />
-          <h3 className="font-bold text-emerald-900 mb-1">匯入資料 (還原)</h3>
-          <p className="text-xs text-emerald-700 text-center mb-4">選擇 JSON 備份檔上傳<br/>(注意：這將覆蓋現有資料)</p>
+          </div>
           
-          <input 
-            type="file" 
-            accept=".json" 
-            ref={fileInputRef}
-            onChange={handleImport}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-            title="點擊選擇檔案"
-          />
-          <button className="w-full py-2 bg-emerald-600 text-white rounded-lg font-medium shadow-sm hover:bg-emerald-700 pointer-events-none">
-            選擇檔案並匯入
-          </button>
+          {view === 'admin_dash' && <AdminDashboard reflections={visibleReflections} handleApproveReflection={handleApproveReflection} handleDeleteReflection={handleDeleteReflection} showConfirm={showConfirm} />}
+          {view === 'admin_quotes' && isAdmin && <AdminQuotes quotes={quotes} handleSaveAllQuotes={handleSaveAllQuotes} showConfirm={showConfirm} />}
+          {view === 'admin_passwords' && isAdmin && <PasswordManager classPasswords={classPasswords} adminPassword={adminPassword} handleSavePasswords={handleSavePasswords} showConfirm={showConfirm} showAlert={showAlert} />}
         </div>
-      </div>
-    </div>
-  );
-}
+      );
+    }
+
+    // --- 審核管理區塊 ---
+    function AdminDashboard({ reflections, handleApproveReflection, handleDeleteReflection, showConfirm }) {
+      const [filter, setFilter] = useState('pending');
+      const filteredData = reflections.filter(r => filter === 'all' || r.status === filter);
+      const [showImageModal, setShowImageModal] = useState(null);
+
+      return (
+        <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
+          <div className="p-4 bg-slate-50 border-b flex justify-between items-center">
+            <h2 className="font-bold">學生心得審核</h2>
+            <select value={filter} onChange={e => setFilter(e.target.value)} className="p-2 border rounded">
+              <option value="pending">待審核</option><option value="approved">已通過</option><option value="all">全部</option>
+            </select>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left min-w-[700px]">
+              <thead className="bg-gray-50 border-b">
+                <tr><th className="p-4">學生</th><th className="p-4">書籍</th><th className="p-4">內容</th><th className="p-4 text-center">操作</th></tr>
+              </thead>
+              <tbody>
+                {filteredData.map(r => (
+                  <tr key={r.id} className="border-b hover:bg-gray-50">
+                    <td className="p-4"><b>{r.name}</b><br/><span className="text-sm text-gray-500">{r.classId}</span></td>
+                    <td className="p-4"><b>{r.bookTitle}</b><br/><span className="text-sm text-gray-500">{r.author}</span></td>
+                    <td className="p-4">
+                      {r.reviewType === 'text' ? <p className="line-clamp-2 text-sm text-gray-700">{r.review}</p> : <button onClick={() => setShowImageModal(r.image)} className="text-blue-600 underline text-sm">檢視照片</button>}
+                    </td>
+                    <td className="p-4 flex gap-2 justify-center">
+                      {r.status === 'pending' && <button onClick={() => handleApproveReflection(r.id)} className="px-3 py-1 bg-green-100 text-green-700 rounded text-sm font-bold">通過</button>}
+                      <button onClick={() => showConfirm('確定刪除？', () => handleDeleteReflection(r.id))} className="px-3 py-1 bg-red-100 text-red-700 rounded text-sm font-bold">刪除</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {showImageModal && (
+            <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[150] p-4" onClick={() => setShowImageModal(null)}>
+              <img src={showImageModal} className="max-w-full max-h-[90vh] rounded bg-white" />
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // --- 標語管理 ---
+    function AdminQuotes({ quotes, handleSaveAllQuotes, showConfirm }) {
+      const [newTitle, setNewTitle] = useState(''); const [newSub, setNewSub] = useState('');
+      const onAdd = (e) => {
+        e.preventDefault();
+        if(!newTitle.trim()) return;
+        handleSaveAllQuotes([...quotes, { title: newTitle.trim(), sub: newSub.trim() }], '新增成功！');
+        setNewTitle(''); setNewSub('');
+      };
+      return (
+        <div className="bg-white rounded-2xl p-6 border">
+          <h2 className="font-bold mb-4">首頁標語管理</h2>
+          <form onSubmit={onAdd} className="flex gap-4 mb-6">
+            <input type="text" required value={newTitle} onChange={e=>setNewTitle(e.target.value)} placeholder="主標題" className="flex-2 p-2 border rounded w-full" />
+            <input type="text" value={newSub} onChange={e=>setNewSub(e.target.value)} placeholder="副標題" className="flex-1 p-2 border rounded w-full" />
+            <button type="submit" className="bg-amber-600 text-white px-4 py-2 rounded font-bold whitespace-nowrap">新增</button>
+          </form>
+          <ul className="divide-y border rounded">
+            {quotes.map((q, i) => (
+              <li key={i} className="p-3 flex justify-between items-center">
+                <div><b>{q.title}</b> <span className="text-gray-500 text-sm">{q.sub}</span></div>
+                <button onClick={() => showConfirm('刪除？', () => handleSaveAllQuotes(quotes.filter((_, idx)=>idx!==i), '刪除成功'))} className="text-red-500">刪除</button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+
+    // --- 密碼與班級管理 ---
+    function PasswordManager({ classPasswords, adminPassword, handleSavePasswords, showConfirm, showAlert }) {
+      const [localAdminPw, setLocalAdminPw] = useState(adminPassword);
+      const [localClassPws, setLocalClassPws] = useState(classPasswords);
+      const [newClassId, setNewClassId] = useState(''); const [newClassPw, setNewClassPw] = useState('');
+
+      const handleAdd = (e) => {
+        e.preventDefault();
+        if (localClassPws[newClassId]) return showAlert("班級已存在！");
+        setLocalClassPws({...localClassPws, [newClassId.trim()]: newClassPw.trim()});
+        setNewClassId(''); setNewClassPw('');
+      };
+
+      return (
+        <div className="space-y-6 pb-20">
+          <div className="bg-white rounded-2xl p-6 border">
+            <h2 className="font-bold text-rose-800 mb-2">最高管理員密碼</h2>
+            <input type="text" value={localAdminPw} onChange={e=>setLocalAdminPw(e.target.value)} className="p-3 border rounded w-full max-w-sm" />
+          </div>
+          <div className="bg-white rounded-2xl p-6 border">
+            <h2 className="font-bold text-indigo-800 mb-4">班級與導師密碼</h2>
+            <form onSubmit={handleAdd} className="flex gap-4 mb-6">
+              <input type="text" required value={newClassId} onChange={e=>setNewClassId(e.target.value)} placeholder="班級名稱" className="p-3 border rounded w-full" />
+              <input type="text" required value={newClassPw} onChange={e=>setNewClassPw(e.target.value)} placeholder="導師密碼" className="p-3 border rounded w-full" />
+              <button type="submit" className="bg-indigo-600 text-white px-6 py-3 rounded font-bold whitespace-nowrap">新增</button>
+            </form>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {Object.entries(localClassPws).map(([cid, pw]) => (
+                <div key={cid} className="p-4 border rounded flex justify-between items-center">
+                  <div><b>{cid}</b><br/><span className="text-gray-500 text-sm">密碼: {pw}</span></div>
+                  <button onClick={() => { const up = {...localClassPws}; delete up[cid]; setLocalClassPws(up); }} className="text-red-500"><i className="fas fa-trash"></i></button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="fixed bottom-6 right-6">
+            <button onClick={() => handleSavePasswords(localAdminPw, localClassPws)} className="bg-slate-800 text-white font-bold py-4 px-8 rounded-full shadow-xl hover:bg-black">
+               儲存密碼設定
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    // 🔴 最後一步：將 React 渲染到畫面上 
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
