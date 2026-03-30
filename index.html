@@ -411,8 +411,9 @@
                                                 <div className="w-24 h-24 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6 text-amber-500"><Icon name="user" size={48}/></div>
                                                 <h2 className="text-3xl font-black mb-2">登入我的護照</h2>
                                                 <div className="space-y-6 max-w-sm mx-auto mt-6">
-                                                    <input type="text" placeholder="班級 (例如: 101)" className="field-input text-center" value={student.classId} onChange={(e) => setStudent({...student, classId: e.target.value})} />
-                                                    <input type="text" placeholder="姓名" className="field-input text-center" value={student.name} onChange={(e) => setStudent({...student, name: e.target.value})} />
+                                                    <input type="text" placeholder="班級 (例如: 101)" className="field-input text-center" value={student.classId} onChange={(e) => setStudent(prev => ({...prev, classId: e.target.value}))} />
+                                                    {/* 🌟 修正中文輸入：加上 autoComplete 和 spellCheck 屬性 */}
+                                                    <input type="text" placeholder="姓名 (可輸入中文)" className="field-input text-center" value={student.name} onChange={(e) => setStudent(prev => ({...prev, name: e.target.value}))} autoComplete="off" spellCheck="false" />
                                                     <button onClick={() => { if(!student.classId || !student.name) return alert('請填寫班級和姓名'); setIsLoggedIn(true); }} className="w-full bg-amber-500 hover:bg-amber-600 text-white p-5 rounded-2xl font-black text-xl shadow-lg">進入護照</button>
                                                 </div>
                                             </>
@@ -421,8 +422,8 @@
                                                 <div className="w-24 h-24 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-500"><Icon name="users" size={48}/></div>
                                                 <h2 className="text-3xl font-black mb-2">班級導師登入</h2>
                                                 <div className="space-y-6 max-w-sm mx-auto mt-6">
-                                                    <input type="text" placeholder="您的班級 (例如: 101)" className="field-input text-center" value={teacherInfo.classId} onChange={(e) => setTeacherInfo({...teacherInfo, classId: e.target.value})} />
-                                                    <input type="password" placeholder="導師專屬密碼" className="field-input text-center" value={teacherInfo.password} onChange={(e) => setTeacherInfo({...teacherInfo, password: e.target.value})} onKeyDown={(e) => {
+                                                    <input type="text" placeholder="您的班級 (例如: 101)" className="field-input text-center" value={teacherInfo.classId} onChange={(e) => setTeacherInfo(prev => ({...prev, classId: e.target.value}))} />
+                                                    <input type="password" placeholder="導師專屬密碼" className="field-input text-center" value={teacherInfo.password} onChange={(e) => setTeacherInfo(prev => ({...prev, password: e.target.value}))} onKeyDown={(e) => {
                                                         if (e.key === 'Enter') {
                                                             if(!teacherInfo.classId) return alert('請填寫班級');
                                                             if(teacherInfo.password === CONFIG.TEACHER_PWD) setIsTeacherLoggedIn(true);
@@ -439,7 +440,7 @@
                                         )}
                                     </div>
                                 ) : isLoggedIn ? (
-                                    /* 學生個人的護照介面 (保持不變) */
+                                    /* 學生個人的護照介面 */
                                     <div className="space-y-6">
                                         <div className="bg-white rounded-[3rem] p-8 md:p-10 border card-shadow relative overflow-hidden">
                                             <div className="flex flex-col md:flex-row gap-8 items-center md:items-start relative z-10">
@@ -453,7 +454,9 @@
                                                 </div>
                                                 <div className="flex flex-col gap-4 w-full md:w-auto">
                                                     <button onClick={() => { setFormData({ id: null, bookTitle: '', author: '', publisher: '', pages: '', reviewType: 'text', review: '', image: '', status: 'pending', returnReason: '' }); setIsEditMode(false); setIsFormOpen(true); }} className="px-8 py-5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black text-xl shadow-lg flex justify-center gap-3"><Icon name="plus-circle" /> 新增紀錄</button>
-                                                    <button onClick={() => setIsLoggedIn(false)} className="px-8 py-4 bg-white border-2 hover:bg-slate-50 text-slate-600 rounded-2xl font-black text-lg flex justify-center">登出</button>
+                                                    
+                                                    {/* 🌟 學生登出按鈕：優化文字與功能 */}
+                                                    <button onClick={() => { setIsLoggedIn(false); setStudent({classId: '', name: ''}); }} className="px-8 py-4 bg-white border-2 hover:bg-slate-50 text-slate-600 rounded-2xl font-black text-lg flex justify-center">登出學生身分</button>
                                                 </div>
                                             </div>
                                         </div>
@@ -492,7 +495,7 @@
                                         </div>
                                     </div>
                                 ) : (
-                                    /* 🌟 導師專屬班級儀表板 */
+                                    /* 導師專屬班級儀表板 */
                                     <div className="space-y-6">
                                         <div className="bg-white rounded-[3rem] p-8 md:p-10 border card-shadow">
                                             <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
@@ -500,7 +503,8 @@
                                                     <span className="bg-indigo-100 text-indigo-600 p-3 rounded-2xl"><Icon name="users" size={28}/></span>
                                                     {teacherInfo.classId} 班閱讀儀表板
                                                 </h2>
-                                                <button onClick={() => setIsTeacherLoggedIn(false)} className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-colors w-full md:w-auto">登出導師身分</button>
+                                                {/* 🌟 導師登出按鈕：確保清除密碼 */}
+                                                <button onClick={() => { setIsTeacherLoggedIn(false); setTeacherInfo(prev => ({...prev, password: ''})); }} className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-colors w-full md:w-auto">登出導師身分</button>
                                             </div>
                                             
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -548,9 +552,8 @@
                             </div>
                         )}
 
-                        {/* ======================= 後台管理 (維持不變) ======================= */}
+                        {/* ======================= 後台管理 ======================= */}
                         {view === 'admin' && (
-                            /* ... 原本的 Admin 區塊維持不變 ... */
                             <div className="animate-in fade-in duration-500 max-w-6xl mx-auto space-y-6">
                                 {!isAdmin ? (
                                     <div className="bg-white p-8 md:p-12 rounded-[3rem] border card-shadow text-center max-w-md mx-auto">
@@ -561,6 +564,15 @@
                                     </div>
                                 ) : (
                                     <>
+                                        {/* 🌟 管理者登出按鈕：新增於後台畫面頂端 */}
+                                        <div className="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-[2rem] border card-shadow gap-4">
+                                            <h2 className="text-2xl font-black flex items-center gap-3">
+                                                <span className="bg-slate-100 text-slate-600 p-3 rounded-2xl"><Icon name="settings" size={24}/></span>
+                                                後台管理中心
+                                            </h2>
+                                            <button onClick={() => { setIsAdmin(false); setAdminPw(''); }} className="px-6 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold transition-colors w-full md:w-auto">登出管理者</button>
+                                        </div>
+
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             <div className="bg-white p-6 rounded-[2rem] border card-shadow">
                                                 <p className="text-slate-500 font-bold mb-1">待審核</p>
@@ -753,3 +765,5 @@
     </script>
 </body>
 </html>
+
+
