@@ -46,9 +46,12 @@
 
     <script type="text/babel">
         // =========================================================================
-        // ⚠️ 記得更換成你最新部署的網頁應用程式網址 (Web App URL)
         const GAS_URL = "https://script.google.com/macros/s/AKfycbzpwetN6q2kiFDd1OZJfvfaPibKjIRBMfq7cHbzaUTOcDe6JigPskhuBSvaSIl63ezP/exec"; 
-        const CONFIG = { ADMIN_PWD: "S2860885*110" }; 
+        
+        const CONFIG = { 
+            ADMIN_PWD: "S2860885*110",
+            TEACHER_PWD: "Teacher123" // 🌟 這裡可以自訂所有導師共用的密碼
+        }; 
         // =========================================================================
 
         const LOADING_QUOTES = [
@@ -91,11 +94,19 @@
             const [loading, setLoading] = useState(false);
             const [records, setRecords] = useState([]);
             const [quotes, setQuotes] = useState([]); 
+            
+            // 權限與登入狀態
             const [isAdmin, setIsAdmin] = useState(false);
             const [adminPw, setAdminPw] = useState(''); 
+            const [isLoggedIn, setIsLoggedIn] = useState(false); // 學生是否登入
+            
+            // 🌟 導師權限狀態
+            const [loginMode, setLoginMode] = useState('student'); // 'student' 或是 'teacher'
+            const [isTeacherLoggedIn, setIsTeacherLoggedIn] = useState(false);
+            const [teacherInfo, setTeacherInfo] = useState({ classId: '', password: '' });
+
             const [adminTab, setAdminTab] = useState('pending');
             const [selectedIds, setSelectedIds] = useState([]);
-            const [isLoggedIn, setIsLoggedIn] = useState(false);
             const [student, setStudent] = useState({ classId: '', name: '' });
             const [isFormOpen, setIsFormOpen] = useState(false);
             const [isEditMode, setIsEditMode] = useState(false);
@@ -124,6 +135,9 @@
                         const randomQuote = json.quotes[Math.floor(Math.random() * json.quotes.length)];
                         setSlogan(randomQuote.zh || randomQuote.title || "讀萬卷書，行萬里路");
                         setSloganSub(randomQuote.en || randomQuote.sub || "讓我們一起探索書中的奇幻世界！");
+                    } else if (json.config && json.config.slogan) {
+                        setSlogan(json.config.slogan);
+                        setSloganSub(json.config.sloganSub);
                     }
                 } catch (e) { console.error("讀取失敗:", e); }
                 setLoading(false);
@@ -144,7 +158,7 @@
                         method: "POST", 
                         redirect: "follow",
                         headers: { "Content-Type": "text/plain;charset=utf-8" }, 
-                        body: JSON.stringify({ action: beAction, id: id, data: data }) 
+                        body: JSON.stringify({ action: beAction, id: id, data: data, payload: data }) // 相容兩種後端命名
                     });
                     
                     const result = await res.json();
@@ -164,7 +178,7 @@
                 for (const id of selectedIds) {
                     await fetch(GAS_URL, { 
                         method: "POST", redirect: "follow", headers: { "Content-Type": "text/plain;charset=utf-8" },
-                        body: JSON.stringify({ action: 'updateReflection', id: id, data: { status: 'approved' } }) 
+                        body: JSON.stringify({ action: 'updateReflection', id: id, data: { status: 'approved' }, payload: { status: 'approved' } }) 
                     });
                 }
                 alert("批次審核全部完成！");
@@ -185,32 +199,6 @@
                 const workbook = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(workbook, worksheet, "閱讀紀錄");
                 XLSX.writeFile(workbook, `興嘉閱讀護照_${new Date().toLocaleDateString()}.xlsx`);
-            };
-
-            const importFromExcel = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                setLoading(true);
-                const reader = new FileReader();
-                reader.onload = async (ev) => {
-                    try {
-                        const data = new Uint8Array(ev.target.result);
-                        const workbook = XLSX.read(data, { type: 'array' });
-                        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                        const mappedData = XLSX.utils.sheet_to_json(worksheet).map((item) => ({
-                            classId: String(item['班級'] || ''), name: item['姓名'] || '', bookTitle: item['書名'] || '', author: item['作者'] || '', publisher: item['出版社'] || '', pages: item['頁數'] || '', reviewType: 'text', review: item['心得內容'] || '', status: 'approved', timestamp: new Date().getTime()
-                        }));
-                        
-                        if (confirm(`已解析 ${mappedData.length} 筆資料。確定匯入嗎？`)) {
-                            for (const item of mappedData) {
-                                await fetch(GAS_URL, { method: "POST", redirect: "follow", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: 'addReflection', data: item }) });
-                            }
-                            await fetchData();
-                        }
-                    } catch (err) { alert("解析失敗。"); }
-                    setLoading(false); e.target.value = ""; 
-                };
-                reader.readAsArrayBuffer(file);
             };
 
             const handleImageUpload = (e) => {
@@ -236,21 +224,12 @@
                 if (!formData.bookTitle || !formData.author || !formData.publisher || !formData.pages) {
                     return alert('「書名」、「作者」、「出版社」、「頁數」皆為必填！');
                 }
-                
-                // 🌟 字數限制防呆機制
                 if (formData.reviewType === 'text') {
                     const textLen = formData.review.length;
-                    if (textLen < 100) {
-                        return alert(`文字心得至少需要 100 字喔！\n您目前只有 ${textLen} 字，還差 ${100 - textLen} 字，加油！`);
-                    }
-                    if (textLen > 500) {
-                        return alert(`文字心得不能超過 500 字喔！\n您目前寫了 ${textLen} 字，請稍微精簡一下。`);
-                    }
+                    if (textLen < 100) return alert(`文字心得至少需要 100 字喔！\n您目前只有 ${textLen} 字，還差 ${100 - textLen} 字，加油！`);
+                    if (textLen > 500) return alert(`文字心得不能超過 500 字喔！\n您目前寫了 ${textLen} 字，請稍微精簡一下。`);
                 }
-
-                if (formData.reviewType === 'image' && !formData.image) {
-                    return alert('請上傳照片！');
-                }
+                if (formData.reviewType === 'image' && !formData.image) return alert('請上傳照片！');
                 
                 const submitData = isEditMode 
                     ? { ...formData, status: 'pending', returnReason: '' } 
@@ -264,9 +243,14 @@
             const pendingRecords = useMemo(() => records.filter(r => r && getSafeStatus(r.status) === 'pending'), [records]);
             const adminCurrentRecords = useMemo(() => records.filter(r => r && getSafeStatus(r.status) === adminTab), [records, adminTab]);
 
+            // 學生個人紀錄
             const myRecords = useMemo(() => records.filter(r => r && getSafeStr(r.name) === getSafeStr(student.name) && getSafeStr(r.classId) === getSafeStr(student.classId)), [records, student]);
             const myApprovedCount = useMemo(() => myRecords.filter(r => getSafeStatus(r.status) === 'approved').length, [myRecords]);
             const currentStage = useMemo(() => getReadingStage(myApprovedCount), [myApprovedCount]);
+
+            // 🌟 導師班級紀錄過濾
+            const classRecords = useMemo(() => records.filter(r => r && getSafeStr(r.classId) === getSafeStr(teacherInfo.classId)), [records, teacherInfo.classId]);
+            const classApprovedRecords = useMemo(() => classRecords.filter(r => getSafeStatus(r.status) === 'approved'), [classRecords]);
 
             const leaderboard = useMemo(() => {
                 const counts = {};
@@ -305,6 +289,7 @@
                         </div>
                         <div className="flex gap-2">
                             {isLoggedIn && <span className="text-xs font-black bg-white px-3 py-2 rounded-xl border shadow-sm flex items-center">{student.classId} {student.name}</span>}
+                            {isTeacherLoggedIn && <span className="text-xs font-black bg-indigo-50 text-indigo-600 px-3 py-2 rounded-xl border border-indigo-200 shadow-sm flex items-center">{teacherInfo.classId} 導師</span>}
                             <button onClick={fetchData} className="p-2.5 bg-white rounded-xl border shadow-sm hover:text-amber-500 transition-colors"><Icon name="refresh-cw" size={18}/></button>
                         </div>
                     </header>
@@ -317,7 +302,7 @@
                                 <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-[3rem] p-12 text-center shadow-xl relative overflow-hidden">
                                     <h2 className="text-4xl md:text-5xl font-black text-white drop-shadow-lg mb-4">{slogan}</h2>
                                     <p className="text-white/90 font-bold text-xl">{sloganSub}</p>
-                                    {!isLoggedIn && (
+                                    {!isLoggedIn && !isTeacherLoggedIn && (
                                         <button onClick={()=>setView('passport')} className="mt-8 px-12 py-4 bg-white text-orange-600 font-black rounded-2xl shadow-xl hover:-translate-y-1 transition-all text-xl">點此登入護照</button>
                                     )}
                                 </div>
@@ -409,20 +394,52 @@
                             </div>
                         )}
 
-                        {/* ======================= 登入/我的護照 ======================= */}
+                        {/* ======================= 登入/我的護照/導師儀表板 ======================= */}
                         {view === 'passport' && (
                             <div className="animate-in fade-in duration-500 max-w-4xl mx-auto">
-                                {!isLoggedIn ? (
+                                {!isLoggedIn && !isTeacherLoggedIn ? (
                                     <div className="bg-white p-8 md:p-12 rounded-[3rem] border card-shadow text-center">
-                                        <div className="w-24 h-24 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6 text-amber-500"><Icon name="user" size={48}/></div>
-                                        <h2 className="text-3xl font-black mb-2">登入我的護照</h2>
-                                        <div className="space-y-6 max-w-sm mx-auto mt-6">
-                                            <input type="text" placeholder="班級 (例如: 101)" className="field-input text-center" value={student.classId} onChange={(e) => setStudent({...student, classId: e.target.value})} />
-                                            <input type="text" placeholder="姓名" className="field-input text-center" value={student.name} onChange={(e) => setStudent({...student, name: e.target.value})} />
-                                            <button onClick={() => { if(!student.classId || !student.name) return alert('請填寫班級和姓名'); setIsLoggedIn(true); }} className="w-full bg-amber-500 hover:bg-amber-600 text-white p-5 rounded-2xl font-black text-xl shadow-lg">進入護照</button>
+                                        
+                                        {/* 🌟 登入角色切換按鈕 */}
+                                        <div className="flex justify-center mb-8 bg-slate-100 p-2 rounded-2xl inline-flex mx-auto">
+                                            <button onClick={() => setLoginMode('student')} className={`px-6 py-2 rounded-xl font-black transition-all ${loginMode === 'student' ? 'bg-white shadow-sm text-amber-500' : 'text-slate-400 hover:text-slate-600'}`}>學生登入</button>
+                                            <button onClick={() => setLoginMode('teacher')} className={`px-6 py-2 rounded-xl font-black transition-all ${loginMode === 'teacher' ? 'bg-white shadow-sm text-indigo-500' : 'text-slate-400 hover:text-slate-600'}`}>導師登入</button>
                                         </div>
+
+                                        {loginMode === 'student' ? (
+                                            <>
+                                                <div className="w-24 h-24 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6 text-amber-500"><Icon name="user" size={48}/></div>
+                                                <h2 className="text-3xl font-black mb-2">登入我的護照</h2>
+                                                <div className="space-y-6 max-w-sm mx-auto mt-6">
+                                                    <input type="text" placeholder="班級 (例如: 101)" className="field-input text-center" value={student.classId} onChange={(e) => setStudent({...student, classId: e.target.value})} />
+                                                    <input type="text" placeholder="姓名" className="field-input text-center" value={student.name} onChange={(e) => setStudent({...student, name: e.target.value})} />
+                                                    <button onClick={() => { if(!student.classId || !student.name) return alert('請填寫班級和姓名'); setIsLoggedIn(true); }} className="w-full bg-amber-500 hover:bg-amber-600 text-white p-5 rounded-2xl font-black text-xl shadow-lg">進入護照</button>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="w-24 h-24 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6 text-indigo-500"><Icon name="users" size={48}/></div>
+                                                <h2 className="text-3xl font-black mb-2">班級導師登入</h2>
+                                                <div className="space-y-6 max-w-sm mx-auto mt-6">
+                                                    <input type="text" placeholder="您的班級 (例如: 101)" className="field-input text-center" value={teacherInfo.classId} onChange={(e) => setTeacherInfo({...teacherInfo, classId: e.target.value})} />
+                                                    <input type="password" placeholder="導師專屬密碼" className="field-input text-center" value={teacherInfo.password} onChange={(e) => setTeacherInfo({...teacherInfo, password: e.target.value})} onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            if(!teacherInfo.classId) return alert('請填寫班級');
+                                                            if(teacherInfo.password === CONFIG.TEACHER_PWD) setIsTeacherLoggedIn(true);
+                                                            else alert('密碼錯誤！');
+                                                        }
+                                                    }}/>
+                                                    <button onClick={() => { 
+                                                        if(!teacherInfo.classId) return alert('請填寫班級');
+                                                        if(teacherInfo.password === CONFIG.TEACHER_PWD) setIsTeacherLoggedIn(true); 
+                                                        else alert('密碼錯誤！'); 
+                                                    }} className="w-full bg-indigo-500 hover:bg-indigo-600 text-white p-5 rounded-2xl font-black text-xl shadow-lg">進入班級儀表板</button>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
-                                ) : (
+                                ) : isLoggedIn ? (
+                                    /* 學生個人的護照介面 (保持不變) */
                                     <div className="space-y-6">
                                         <div className="bg-white rounded-[3rem] p-8 md:p-10 border card-shadow relative overflow-hidden">
                                             <div className="flex flex-col md:flex-row gap-8 items-center md:items-start relative z-10">
@@ -435,7 +452,7 @@
                                                     </div>
                                                 </div>
                                                 <div className="flex flex-col gap-4 w-full md:w-auto">
-                                                    <button onClick={() => { setFormData({ id: null, bookTitle: '', author: '', publisher: '', pages: '', reviewType: 'text', review: '', image: '', status: 'pending', returnReason: '' }); setIsEditMode(false); setIsFormOpen(true); }} className="px-8 py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xl shadow-lg flex justify-center gap-3"><Icon name="plus-circle" /> 新增紀錄</button>
+                                                    <button onClick={() => { setFormData({ id: null, bookTitle: '', author: '', publisher: '', pages: '', reviewType: 'text', review: '', image: '', status: 'pending', returnReason: '' }); setIsEditMode(false); setIsFormOpen(true); }} className="px-8 py-5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black text-xl shadow-lg flex justify-center gap-3"><Icon name="plus-circle" /> 新增紀錄</button>
                                                     <button onClick={() => setIsLoggedIn(false)} className="px-8 py-4 bg-white border-2 hover:bg-slate-50 text-slate-600 rounded-2xl font-black text-lg flex justify-center">登出</button>
                                                 </div>
                                             </div>
@@ -474,12 +491,66 @@
                                             </div>
                                         </div>
                                     </div>
+                                ) : (
+                                    /* 🌟 導師專屬班級儀表板 */
+                                    <div className="space-y-6">
+                                        <div className="bg-white rounded-[3rem] p-8 md:p-10 border card-shadow">
+                                            <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                                                <h2 className="text-3xl font-black flex items-center gap-3">
+                                                    <span className="bg-indigo-100 text-indigo-600 p-3 rounded-2xl"><Icon name="users" size={28}/></span>
+                                                    {teacherInfo.classId} 班閱讀儀表板
+                                                </h2>
+                                                <button onClick={() => setIsTeacherLoggedIn(false)} className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-colors w-full md:w-auto">登出導師身分</button>
+                                            </div>
+                                            
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                                                <div className="bg-amber-50 p-6 rounded-[2rem] border border-amber-100">
+                                                    <p className="text-amber-600 font-bold mb-2">班級總閱讀量 (已核准)</p>
+                                                    <p className="text-5xl font-black text-amber-500">{classApprovedRecords.length} <span className="text-2xl">冊</span></p>
+                                                </div>
+                                                <div className="bg-emerald-50 p-6 rounded-[2rem] border border-emerald-100">
+                                                    <p className="text-emerald-600 font-bold mb-2">參與學生人數</p>
+                                                    <p className="text-5xl font-black text-emerald-500">{new Set(classApprovedRecords.map(r => r.name)).size} <span className="text-2xl">人</span></p>
+                                                </div>
+                                            </div>
+
+                                            <h3 className="text-2xl font-black mb-6 flex items-center gap-2"><Icon name="list-checks"/> 班級學生心得列表</h3>
+                                            <div className="space-y-3 max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
+                                                {classRecords.length === 0 ? (
+                                                    <p className="text-center text-slate-400 font-bold py-10 border-2 border-dashed rounded-2xl bg-slate-50">班上目前還沒有閱讀紀錄喔！提醒小朋友來填寫吧！</p>
+                                                ) : (
+                                                    classRecords.map((r, i) => (
+                                                        <div key={i} className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 bg-slate-50 hover:bg-white border rounded-2xl transition-all hover:shadow-md gap-4">
+                                                            <div>
+                                                                <div className="flex items-center gap-2 mb-1">
+                                                                    <span className="font-black text-slate-800 text-lg">{r.name}</span>
+                                                                    <span className="text-xs font-bold text-slate-400 bg-white border px-2 py-0.5 rounded-md">{new Date(r.timestamp || r.date).toLocaleDateString()}</span>
+                                                                </div>
+                                                                <span className="font-bold text-indigo-600 text-sm">《{r.bookTitle}》</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-3 w-full md:w-auto justify-end border-t md:border-t-0 pt-3 md:pt-0">
+                                                                {r.status === 'approved' ? (
+                                                                    <span className="text-xs bg-emerald-100 text-emerald-700 px-3 py-1.5 rounded-lg font-black flex items-center gap-1"><Icon name="check" size={14}/> 已核准</span>
+                                                                ) : r.status === 'returned' ? (
+                                                                    <span className="text-xs bg-red-100 text-red-700 px-3 py-1.5 rounded-lg font-black flex items-center gap-1"><Icon name="x" size={14}/> 已退回</span>
+                                                                ) : (
+                                                                    <span className="text-xs bg-amber-100 text-amber-700 px-3 py-1.5 rounded-lg font-black flex items-center gap-1"><Icon name="clock" size={14}/> 待審核</span>
+                                                                )}
+                                                                <button onClick={() => setDetail(r)} className="px-4 py-1.5 bg-white border shadow-sm rounded-xl text-sm font-bold text-slate-600 hover:text-indigo-600 transition-colors">閱讀心得</button>
+                                                            </div>
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
                                 )}
                             </div>
                         )}
 
-                        {/* ======================= 後台管理 ======================= */}
+                        {/* ======================= 後台管理 (維持不變) ======================= */}
                         {view === 'admin' && (
+                            /* ... 原本的 Admin 區塊維持不變 ... */
                             <div className="animate-in fade-in duration-500 max-w-6xl mx-auto space-y-6">
                                 {!isAdmin ? (
                                     <div className="bg-white p-8 md:p-12 rounded-[3rem] border card-shadow text-center max-w-md mx-auto">
@@ -595,7 +666,7 @@
                         </div>
                     </nav>
 
-                    {/* ======================= Modal: 填寫表單 ======================= */}
+                    {/* ======================= Modal: 填寫表單 (維持不變) ======================= */}
                     {isFormOpen && (
                         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
                             <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl relative my-8 animate-in zoom-in-95 duration-200">
@@ -619,7 +690,6 @@
                                         {formData.reviewType === 'text' ? (
                                             <div>
                                                 <textarea className="field-input field-textarea" placeholder="請寫下您對這本書的想法、學到了什麼，或是最喜歡的段落... (100 - 500字)" value={formData.review} onChange={e=>setFormData({...formData, review:e.target.value})}></textarea>
-                                                {/* 🌟 100-500 字數即時回饋 */}
                                                 <div className="text-right mt-2 text-sm font-bold text-slate-400">
                                                     目前字數: 
                                                     <span className={formData.review.length < 100 || formData.review.length > 500 ? 'text-red-500 mx-1' : 'text-emerald-500 mx-1'}>
@@ -683,4 +753,3 @@
     </script>
 </body>
 </html>
-
